@@ -2,6 +2,7 @@ import { FileText, Briefcase, Gauge } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { VoiceInput } from '../VoiceInput';
+import { AIAnalysisPanel } from '../AIAnalysisPanel';
 import { ProjectFormData, ProjectType, ComplexityLevel, ProjectStage } from '@/types/estimator';
 import { cn } from '@/lib/utils';
 
@@ -33,6 +34,10 @@ export function ProjectInfoSection({ data, onChange }: ProjectInfoSectionProps) 
     onChange({ 
       voiceDescription: (data.voiceDescription || '') + ' ' + text 
     });
+  };
+
+  const handleAISuggestions = (updates: Partial<ProjectFormData>) => {
+    onChange(updates);
   };
 
   return (
@@ -69,6 +74,13 @@ export function ProjectInfoSection({ data, onChange }: ProjectInfoSectionProps) 
           className="min-h-[100px]"
         />
       </div>
+
+      {/* AI Analysis Panel */}
+      <AIAnalysisPanel 
+        description={data.voiceDescription || ''} 
+        projectType={data.projectType}
+        onApplySuggestions={handleAISuggestions}
+      />
 
       {/* Project Stage */}
       <div>

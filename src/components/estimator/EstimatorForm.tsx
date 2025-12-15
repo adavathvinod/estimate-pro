@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect, useRef } from 'react';
-import { Calculator, Clock, DollarSign, Download, Save, History, GitCompare, ChevronUp, Loader2 } from 'lucide-react';
+import { Calculator, Clock, DollarSign, Download, Save, History, GitCompare, ChevronUp, Loader2, Users } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ProjectInfoSection } from './sections/ProjectInfoSection';
 import { ExperienceSection } from './sections/ExperienceSection';
@@ -9,6 +9,7 @@ import { PMSection } from './sections/PMSection';
 import { DevelopmentSection } from './sections/DevelopmentSection';
 import { QADeploySection } from './sections/QADeploySection';
 import { ComparisonView } from './ComparisonView';
+import { ShareEstimateDialog } from './ShareEstimateDialog';
 import { ProjectFormData, defaultFormData, ProjectEstimate, CustomItem, EXPERIENCE_LEVELS } from '@/types/estimator';
 import { calculateEstimate, formatCurrency, formatDuration } from '@/lib/estimationEngine';
 import { generatePDFReport } from '@/lib/pdfExport';
@@ -23,6 +24,7 @@ export function EstimatorForm() {
   const [selectedForCompare, setSelectedForCompare] = useState<string[]>([]);
   const [showScrollTop, setShowScrollTop] = useState(false);
   const [generating, setGenerating] = useState(false);
+  const [activeViewers, setActiveViewers] = useState(0);
   
   const { saveEstimate, loadEstimates, getHistoricalMatch, saving, loading } = useEstimateStorage();
   const summaryRef = useRef<HTMLDivElement>(null);
@@ -66,6 +68,12 @@ export function EstimatorForm() {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
+  // Simulate active viewers (in real app, use Supabase Realtime presence)
+  useEffect(() => {
+    const randomViewers = Math.floor(Math.random() * 3);
+    setActiveViewers(randomViewers);
+  }, []);
+
   const handleSaveEstimate = async () => {
     if (!formData.projectName.trim()) {
       toast.error('Please enter a project name');
@@ -104,10 +112,6 @@ export function EstimatorForm() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  const scrollToSummary = () => {
-    summaryRef.current?.scrollIntoView({ behavior: 'smooth' });
-  };
-
   return (
     <div className="max-w-4xl mx-auto pb-32">
       {/* Sticky Header */}
@@ -116,20 +120,31 @@ export function EstimatorForm() {
           <div className="flex items-center gap-3">
             <Calculator className="w-5 h-5 text-primary" />
             <span className="font-semibold hidden sm:inline">Project Estimator</span>
+            {activeViewers > 0 && (
+              <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                <Users className="w-3 h-3" />
+                <span>{activeViewers} viewing</span>
+              </div>
+            )}
           </div>
           
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2 sm:gap-4">
             <div className="flex items-center gap-4 text-sm">
               <div className="text-center">
                 <div className="font-bold text-primary">{formatDuration(liveEstimate.totalWeeks)}</div>
-                <div className="text-xs text-muted-foreground">Time</div>
+                <div className="text-xs text-muted-foreground hidden sm:block">Time</div>
               </div>
-              <div className="h-8 w-px bg-border" />
-              <div className="text-center">
+              <div className="h-8 w-px bg-border hidden sm:block" />
+              <div className="text-center hidden sm:block">
                 <div className="font-bold">{formatCurrency(liveEstimate.totalCost)}</div>
                 <div className="text-xs text-muted-foreground">Cost</div>
               </div>
             </div>
+            
+            <ShareEstimateDialog 
+              estimateId={liveEstimate.id} 
+              projectName={formData.projectName || 'Untitled'} 
+            />
             
             <Button variant="outline" size="sm" onClick={() => setShowHistory(!showHistory)}>
               <History className="w-4 h-4" />
