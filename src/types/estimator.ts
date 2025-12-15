@@ -3,6 +3,7 @@ export type ProjectStage = 'pre-idea' | 'documented';
 export type ComplexityLevel = 'simple' | 'medium' | 'complex';
 export type Platform = 'web' | 'android' | 'ios' | 'linux-server' | 'cross-platform';
 export type ItemComplexity = 'low' | 'medium' | 'high';
+export type ExperienceLevel = 'junior' | 'mid' | 'senior' | 'lead' | 'architect';
 
 export interface CustomItem {
   id: string;
@@ -29,7 +30,7 @@ export interface ProjectEstimate {
   id: string;
   projectName: string;
   projectType: ProjectType;
-  platform: Platform;
+  platform: Platform | Platform[];
   complexity: ComplexityLevel;
   stages: StageEstimate[];
   totalHours: number;
@@ -43,14 +44,23 @@ export interface ProjectEstimate {
     accuracy: number;
     adjustedHours: number;
   };
+  teamExperience?: ExperienceLevel;
+  technologies?: string[];
 }
 
 export interface ProjectFormData {
   projectName: string;
   projectType: ProjectType;
   projectStage: ProjectStage;
-  platform: Platform;
+  platforms: Platform[];  // Changed to array for multi-platform
   complexity: ComplexityLevel;
+  
+  // Team Experience
+  teamExperience: ExperienceLevel;
+  yearsOfExperience: number;
+  
+  // Technologies
+  technologies: string[];
   
   // PM Stage
   pmInvolvement: number;
@@ -82,6 +92,9 @@ export interface ProjectFormData {
   
   // Uploaded documents
   uploadedDocuments?: UploadedDocument[];
+  
+  // Voice input transcript
+  voiceDescription?: string;
 }
 
 export interface UploadedDocument {
@@ -98,12 +111,32 @@ export interface DocumentAnalysis {
   summary: string;
 }
 
+// Available technologies
+export const AVAILABLE_TECHNOLOGIES = {
+  frontend: ['React', 'Vue.js', 'Angular', 'Next.js', 'TypeScript', 'Tailwind CSS', 'Flutter', 'React Native', 'Swift', 'Kotlin'],
+  backend: ['Node.js', 'Python', 'Java', 'Go', 'Rust', '.NET', 'PHP', 'Ruby'],
+  database: ['PostgreSQL', 'MySQL', 'MongoDB', 'Redis', 'Firebase', 'Supabase'],
+  cloud: ['AWS', 'Azure', 'GCP', 'Vercel', 'Netlify', 'DigitalOcean'],
+  tools: ['Docker', 'Kubernetes', 'GitHub Actions', 'Jenkins', 'Terraform'],
+};
+
+export const EXPERIENCE_LEVELS: { value: ExperienceLevel; label: string; years: string; multiplier: number }[] = [
+  { value: 'junior', label: 'Junior', years: '0-2 years', multiplier: 1.4 },
+  { value: 'mid', label: 'Mid-Level', years: '2-5 years', multiplier: 1.1 },
+  { value: 'senior', label: 'Senior', years: '5-8 years', multiplier: 1.0 },
+  { value: 'lead', label: 'Tech Lead', years: '8-12 years', multiplier: 0.9 },
+  { value: 'architect', label: 'Architect', years: '12+ years', multiplier: 0.85 },
+];
+
 export const defaultFormData: ProjectFormData = {
   projectName: '',
   projectType: 'web-app',
   projectStage: 'pre-idea',
-  platform: 'web',
+  platforms: ['web'],
   complexity: 'medium',
+  teamExperience: 'mid',
+  yearsOfExperience: 3,
+  technologies: [],
   pmInvolvement: 20,
   uniqueScreens: 10,
   customBranding: false,
@@ -119,6 +152,7 @@ export const defaultFormData: ProjectFormData = {
   supportDays: 30,
   customItems: [],
   uploadedDocuments: [],
+  voiceDescription: '',
 };
 
 export const HOURLY_RATES = {

@@ -5,7 +5,6 @@ import {
   HOURLY_RATES, 
   STAGE_PERSONNEL,
   STAGE_TIME_REASONS,
-  ITEM_COMPLEXITY_HOURS,
   ComplexityLevel,
   CustomItem
 } from '@/types/estimator';
@@ -31,11 +30,14 @@ function getCustomItemsHours(customItems: CustomItem[], stage: string): number {
 }
 
 function generateStageReason(stage: string, data: ProjectFormData): string {
+  const platforms = data.platforms || ['web'];
+  const platform = platforms[0];
+  
   switch (stage) {
     case 'Project Management':
       const pmReasons = [STAGE_TIME_REASONS.pm.base];
       if (data.complexity === 'complex') pmReasons.push(STAGE_TIME_REASONS.pm.complexity);
-      if (data.platform !== 'web') pmReasons.push(STAGE_TIME_REASONS.pm.platform);
+      if (platform !== 'web') pmReasons.push(STAGE_TIME_REASONS.pm.platform);
       return pmReasons.join(' ');
     
     case 'UX/UI Design':
@@ -65,7 +67,7 @@ function generateStageReason(stage: string, data: ProjectFormData): string {
     case 'Deployment & Support':
       const deployReasons = [STAGE_TIME_REASONS.deploy.base];
       if (data.cicdSetup) deployReasons.push(STAGE_TIME_REASONS.deploy.cicd);
-      if (data.platform === 'ios' || data.platform === 'android') deployReasons.push(STAGE_TIME_REASONS.deploy.appstore);
+      if (platform === 'ios' || platform === 'android') deployReasons.push(STAGE_TIME_REASONS.deploy.appstore);
       return deployReasons.join(' ');
     
     default:
@@ -75,11 +77,13 @@ function generateStageReason(stage: string, data: ProjectFormData): string {
 
 export function calculateEstimate(data: ProjectFormData): ProjectEstimate {
   const complexityMult = COMPLEXITY_MULTIPLIERS[data.complexity];
-  const platformMult = PLATFORM_MULTIPLIERS[data.platform];
+  const platforms = data.platforms || ['web'];
+  const platform = platforms[0];
+  const platformMult = PLATFORM_MULTIPLIERS[platform] || 1;
   const stages: StageEstimate[] = [];
   const customItems = data.customItems || [];
 
-  // PM Stage Calculation
+  // PM Stage
   const baseProjectHours = data.uniqueScreens * 8 * complexityMult;
   const pmCustomHours = getCustomItemsHours(customItems, 'pm');
   const pmHours = baseProjectHours * (data.pmInvolvement / 100) * platformMult + pmCustomHours;
@@ -95,7 +99,7 @@ export function calculateEstimate(data: ProjectFormData): ProjectEstimate {
     customItems: customItems.filter(i => i.stage === 'pm'),
   });
 
-  // Design Stage Calculation
+  // Design Stage
   const designHoursPerScreen = data.customBranding ? 12 : 6;
   const designCustomHours = getCustomItemsHours(customItems, 'design');
   const designHours = data.uniqueScreens * designHoursPerScreen * complexityMult + designCustomHours;
@@ -111,10 +115,11 @@ export function calculateEstimate(data: ProjectFormData): ProjectEstimate {
     customItems: customItems.filter(i => i.stage === 'design'),
   });
 
-  // Frontend Stage Calculation
+  // Frontend Stage
   const animationMult = data.animationLevel === 'none' ? 0.8 : data.animationLevel === 'simple' ? 1.0 : 1.4;
   const frontendCustomHours = getCustomItemsHours(customItems, 'frontend');
   const frontendHours = (data.uniqueScreens * 16 + data.apiIntegrations * 8) * complexityMult * animationMult * platformMult + frontendCustomHours;
+  const isMobile = platform === 'ios' || platform === 'android' || platform === 'cross-platform';
   stages.push({
     stage: 'Frontend Development',
     hours: Math.round(frontendHours),
@@ -122,14 +127,12 @@ export function calculateEstimate(data: ProjectFormData): ProjectEstimate {
     cost: Math.round(frontendHours * HOURLY_RATES.frontend),
     personnel: STAGE_PERSONNEL.frontend.count,
     experience: STAGE_PERSONNEL.frontend.experience,
-    tools: data.platform === 'ios' || data.platform === 'android' || data.platform === 'cross-platform'
-      ? ['React Native', 'TypeScript', 'REST/GraphQL']
-      : STAGE_PERSONNEL.frontend.tools,
+    tools: isMobile ? ['React Native', 'TypeScript', 'REST/GraphQL'] : STAGE_PERSONNEL.frontend.tools,
     reason: generateStageReason('Frontend Development', data),
     customItems: customItems.filter(i => i.stage === 'frontend'),
   });
 
-  // Backend Stage Calculation
+  // Backend Stage
   const logicMult = COMPLEXITY_MULTIPLIERS[data.businessLogicComplexity];
   const securityMult = data.securityLevel === 'basic' ? 0.8 : data.securityLevel === 'standard' ? 1.0 : 1.5;
   const dbMult = data.databaseSize === 'small' ? 0.7 : data.databaseSize === 'medium' ? 1.0 : 1.6;
@@ -147,7 +150,7 @@ export function calculateEstimate(data: ProjectFormData): ProjectEstimate {
     customItems: customItems.filter(i => i.stage === 'backend'),
   });
 
-  // QA Stage Calculation
+  // QA Stage
   const testMult = data.testCoverage === 'unit' ? 0.6 : data.testCoverage === 'integration' ? 1.0 : 1.5;
   const qaCustomHours = getCustomItemsHours(customItems, 'qa');
   const qaHours = (frontendHours + backendHours) * 0.25 * testMult + data.uatDays * 8 + qaCustomHours;
@@ -163,10 +166,11 @@ export function calculateEstimate(data: ProjectFormData): ProjectEstimate {
     customItems: customItems.filter(i => i.stage === 'qa'),
   });
 
-  // Deployment Stage Calculation
+  // Deployment Stage
   const cicdHours = data.cicdSetup ? 24 : 8;
   const deployCustomHours = getCustomItemsHours(customItems, 'deploy');
-  const deployHours = cicdHours + data.supportDays * 2 + (data.platform === 'ios' || data.platform === 'android' ? 16 : 0) + deployCustomHours;
+  const appStoreHours = (platform === 'ios' || platform === 'android') ? 16 : 0;
+  const deployHours = cicdHours + data.supportDays * 2 + appStoreHours + deployCustomHours;
   stages.push({
     stage: 'Deployment & Support',
     hours: Math.round(deployHours),
@@ -186,7 +190,7 @@ export function calculateEstimate(data: ProjectFormData): ProjectEstimate {
     id: crypto.randomUUID(),
     projectName: data.projectName || 'Untitled Project',
     projectType: data.projectType,
-    platform: data.platform,
+    platform: platforms,
     complexity: data.complexity,
     stages,
     totalHours,
@@ -207,21 +211,15 @@ export function formatCurrency(amount: number): string {
 }
 
 export function formatDuration(weeks: number): string {
-  if (weeks < 1) {
-    return `${Math.round(weeks * 5)} days`;
-  }
+  if (weeks < 1) return `${Math.round(weeks * 5)} days`;
   const months = Math.floor(weeks / 4);
   const remainingWeeks = Math.round(weeks % 4);
-  
-  if (months === 0) {
-    return `${Math.round(weeks)} week${weeks !== 1 ? 's' : ''}`;
-  }
-  if (remainingWeeks === 0) {
-    return `${months} month${months !== 1 ? 's' : ''}`;
-  }
+  if (months === 0) return `${Math.round(weeks)} week${weeks !== 1 ? 's' : ''}`;
+  if (remainingWeeks === 0) return `${months} month${months !== 1 ? 's' : ''}`;
   return `${months} month${months !== 1 ? 's' : ''}, ${remainingWeeks} week${remainingWeeks !== 1 ? 's' : ''}`;
 }
 
 export function calculateItemHours(complexity: 'low' | 'medium' | 'high'): number {
+  const ITEM_COMPLEXITY_HOURS = { low: 4, medium: 12, high: 24 };
   return ITEM_COMPLEXITY_HOURS[complexity];
 }
