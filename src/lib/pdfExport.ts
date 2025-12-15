@@ -1,9 +1,11 @@
-import jsPDF from 'jspdf';
-import autoTable from 'jspdf-autotable';
 import { ProjectEstimate } from '@/types/estimator';
 import { formatCurrency, formatDuration } from './estimationEngine';
 
-export function generatePDFReport(estimate: ProjectEstimate): void {
+export async function generatePDFReport(estimate: ProjectEstimate): Promise<void> {
+  // Dynamic import to avoid bundling issues
+  const jsPDF = (await import('jspdf')).default;
+  const autoTable = (await import('jspdf-autotable')).default;
+  
   const doc = new jsPDF();
   const pageWidth = doc.internal.pageSize.getWidth();
   
