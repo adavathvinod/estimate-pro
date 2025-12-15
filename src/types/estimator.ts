@@ -2,6 +2,16 @@ export type ProjectType = 'website' | 'web-app' | 'mobile-app' | 'it-service';
 export type ProjectStage = 'pre-idea' | 'documented';
 export type ComplexityLevel = 'simple' | 'medium' | 'complex';
 export type Platform = 'web' | 'android' | 'ios' | 'linux-server' | 'cross-platform';
+export type ItemComplexity = 'low' | 'medium' | 'high';
+
+export interface CustomItem {
+  id: string;
+  name: string;
+  complexity: ItemComplexity;
+  stage: string;
+  hours: number;
+  reason: string;
+}
 
 export interface StageEstimate {
   stage: string;
@@ -11,6 +21,8 @@ export interface StageEstimate {
   personnel: number;
   experience: string;
   tools: string[];
+  reason: string;
+  customItems?: CustomItem[];
 }
 
 export interface ProjectEstimate {
@@ -24,6 +36,13 @@ export interface ProjectEstimate {
   totalWeeks: number;
   totalCost: number;
   createdAt: Date;
+  customItems?: CustomItem[];
+  aiSuggestions?: string;
+  historicalMatch?: {
+    projectName: string;
+    accuracy: number;
+    adjustedHours: number;
+  };
 }
 
 export interface ProjectFormData {
@@ -57,6 +76,26 @@ export interface ProjectFormData {
   cloudProvider: 'aws' | 'azure' | 'gcp';
   cicdSetup: boolean;
   supportDays: number;
+  
+  // Custom items per stage
+  customItems: CustomItem[];
+  
+  // Uploaded documents
+  uploadedDocuments?: UploadedDocument[];
+}
+
+export interface UploadedDocument {
+  id: string;
+  fileName: string;
+  fileUrl: string;
+  analysis?: DocumentAnalysis;
+}
+
+export interface DocumentAnalysis {
+  suggestedScreens: number;
+  suggestedComplexity: ComplexityLevel;
+  suggestedFeatures: string[];
+  summary: string;
 }
 
 export const defaultFormData: ProjectFormData = {
@@ -78,6 +117,8 @@ export const defaultFormData: ProjectFormData = {
   cloudProvider: 'aws',
   cicdSetup: true,
   supportDays: 30,
+  customItems: [],
+  uploadedDocuments: [],
 };
 
 export const HOURLY_RATES = {
@@ -96,4 +137,43 @@ export const STAGE_PERSONNEL = {
   backend: { count: 2, experience: '5+ years', tools: ['Node.js', 'PostgreSQL', 'Docker'] },
   qa: { count: 1, experience: '3+ years', tools: ['Selenium', 'Cypress', 'Jest'] },
   devops: { count: 1, experience: '4+ years', tools: ['Docker', 'Kubernetes', 'CI/CD'] },
+};
+
+export const ITEM_COMPLEXITY_HOURS: Record<ItemComplexity, number> = {
+  low: 4,
+  medium: 12,
+  high: 24,
+};
+
+export const STAGE_TIME_REASONS = {
+  pm: {
+    base: 'Project management overhead scales with team size and project complexity.',
+    complexity: 'Higher complexity requires more coordination, risk management, and stakeholder communication.',
+    platform: 'Mobile and cross-platform projects need additional coordination between specialized teams.',
+  },
+  design: {
+    base: 'Each unique screen requires wireframing, mockups, and multiple design iterations.',
+    branding: 'Custom branding adds logo design, color palette development, and brand guidelines.',
+    complexity: 'Complex interfaces need detailed interaction design and accessibility considerations.',
+  },
+  frontend: {
+    base: 'Frontend development includes component building, state management, and responsive design.',
+    animations: 'Advanced animations require careful implementation and performance optimization.',
+    integrations: 'Each API integration needs implementation, error handling, and testing.',
+  },
+  backend: {
+    base: 'Backend development covers API design, business logic, and database operations.',
+    security: 'Enterprise security requires authentication, authorization, encryption, and audit logging.',
+    database: 'Larger databases need schema optimization, indexing, and migration strategies.',
+  },
+  qa: {
+    base: 'Quality assurance ensures reliability through systematic testing approaches.',
+    coverage: 'End-to-end testing provides comprehensive coverage but requires more time.',
+    uat: 'User acceptance testing validates business requirements with real stakeholders.',
+  },
+  deploy: {
+    base: 'Deployment includes environment setup, configuration, and initial launch.',
+    cicd: 'CI/CD pipelines automate testing and deployment for faster, safer releases.',
+    appstore: 'App store submissions require compliance reviews, assets, and iteration time.',
+  },
 };
