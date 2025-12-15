@@ -1,17 +1,19 @@
-import { Users, Palette, Brush, LayoutGrid } from 'lucide-react';
+import { Users, Palette, Brush } from 'lucide-react';
 import { StepCard } from '../StepCard';
 import { FormField } from '../FormField';
+import { CustomItemEditor } from '../CustomItemEditor';
 import { Slider } from '@/components/ui/slider';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
-import { ProjectFormData, STAGE_PERSONNEL } from '@/types/estimator';
+import { ProjectFormData, STAGE_PERSONNEL, CustomItem } from '@/types/estimator';
 
 interface PMDesignStepProps {
   data: ProjectFormData;
   onChange: (updates: Partial<ProjectFormData>) => void;
+  onCustomItemsChange: (customItems: CustomItem[]) => void;
 }
 
-export function PMDesignStep({ data, onChange }: PMDesignStepProps) {
+export function PMDesignStep({ data, onChange, onCustomItemsChange }: PMDesignStepProps) {
   return (
     <div className="space-y-6">
       <StepCard
@@ -49,6 +51,13 @@ export function PMDesignStep({ data, onChange }: PMDesignStepProps) {
             <span>50% (Heavy)</span>
           </div>
         </FormField>
+
+        <CustomItemEditor
+          items={data.customItems}
+          stage="pm"
+          stageName="PM"
+          onChange={onCustomItemsChange}
+        />
       </StepCard>
 
       <StepCard
@@ -101,6 +110,13 @@ export function PMDesignStep({ data, onChange }: PMDesignStepProps) {
             onCheckedChange={(checked) => onChange({ customBranding: checked })}
           />
         </div>
+
+        <CustomItemEditor
+          items={data.customItems}
+          stage="design"
+          stageName="Design"
+          onChange={onCustomItemsChange}
+        />
       </StepCard>
     </div>
   );

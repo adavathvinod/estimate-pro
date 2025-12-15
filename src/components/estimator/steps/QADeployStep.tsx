@@ -1,16 +1,17 @@
 import { TestTube, Rocket, Cloud, GitBranch, CheckCircle } from 'lucide-react';
 import { StepCard } from '../StepCard';
 import { FormField } from '../FormField';
-import { SelectionCard } from '../SelectionCard';
+import { CustomItemEditor } from '../CustomItemEditor';
 import { Slider } from '@/components/ui/slider';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
-import { ProjectFormData, STAGE_PERSONNEL } from '@/types/estimator';
+import { ProjectFormData, STAGE_PERSONNEL, CustomItem } from '@/types/estimator';
 import { cn } from '@/lib/utils';
 
 interface QADeployStepProps {
   data: ProjectFormData;
   onChange: (updates: Partial<ProjectFormData>) => void;
+  onCustomItemsChange: (customItems: CustomItem[]) => void;
 }
 
 const testCoverageOptions = [
@@ -25,7 +26,7 @@ const cloudProviders = [
   { value: 'gcp', title: 'GCP', description: 'Google Cloud Platform' },
 ] as const;
 
-export function QADeployStep({ data, onChange }: QADeployStepProps) {
+export function QADeployStep({ data, onChange, onCustomItemsChange }: QADeployStepProps) {
   return (
     <div className="space-y-6">
       <StepCard
@@ -88,6 +89,13 @@ export function QADeployStep({ data, onChange }: QADeployStepProps) {
             <span>20 days</span>
           </div>
         </FormField>
+
+        <CustomItemEditor
+          items={data.customItems}
+          stage="qa"
+          stageName="QA"
+          onChange={onCustomItemsChange}
+        />
       </StepCard>
 
       <StepCard
@@ -164,6 +172,13 @@ export function QADeployStep({ data, onChange }: QADeployStepProps) {
             <span>90 days</span>
           </div>
         </FormField>
+
+        <CustomItemEditor
+          items={data.customItems}
+          stage="deploy"
+          stageName="Deploy"
+          onChange={onCustomItemsChange}
+        />
       </StepCard>
     </div>
   );
