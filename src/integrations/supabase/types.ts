@@ -14,7 +14,92 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      project_documents: {
+        Row: {
+          analysis_result: Json | null
+          created_at: string
+          estimate_id: string | null
+          file_name: string
+          file_type: string
+          file_url: string
+          id: string
+        }
+        Insert: {
+          analysis_result?: Json | null
+          created_at?: string
+          estimate_id?: string | null
+          file_name: string
+          file_type: string
+          file_url: string
+          id?: string
+        }
+        Update: {
+          analysis_result?: Json | null
+          created_at?: string
+          estimate_id?: string | null
+          file_name?: string
+          file_type?: string
+          file_url?: string
+          id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "project_documents_estimate_id_fkey"
+            columns: ["estimate_id"]
+            isOneToOne: false
+            referencedRelation: "project_estimates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      project_estimates: {
+        Row: {
+          complexity: string
+          created_at: string
+          custom_items: Json | null
+          form_data: Json
+          id: string
+          platform: string
+          project_name: string
+          project_stage: string
+          project_type: string
+          stage_estimates: Json
+          total_cost: number
+          total_hours: number
+          total_weeks: number
+        }
+        Insert: {
+          complexity: string
+          created_at?: string
+          custom_items?: Json | null
+          form_data: Json
+          id?: string
+          platform: string
+          project_name: string
+          project_stage: string
+          project_type: string
+          stage_estimates: Json
+          total_cost: number
+          total_hours: number
+          total_weeks: number
+        }
+        Update: {
+          complexity?: string
+          created_at?: string
+          custom_items?: Json | null
+          form_data?: Json
+          id?: string
+          platform?: string
+          project_name?: string
+          project_stage?: string
+          project_type?: string
+          stage_estimates?: Json
+          total_cost?: number
+          total_hours?: number
+          total_weeks?: number
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never

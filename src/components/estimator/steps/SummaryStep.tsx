@@ -1,14 +1,16 @@
-import { FileText, Clock, DollarSign, Users, Wrench, Download } from 'lucide-react';
-import { StepCard } from '../StepCard';
+import { FileText, Clock, DollarSign, Users, Wrench, Download, Save, Info, Brain } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ProjectEstimate } from '@/types/estimator';
 import { formatCurrency, formatDuration } from '@/lib/estimationEngine';
+import { generatePDFReport } from '@/lib/pdfExport';
 import { cn } from '@/lib/utils';
+import { toast } from 'sonner';
 
 interface SummaryStepProps {
   estimate: ProjectEstimate;
-  onDownload: () => void;
+  onSave: () => void;
   onStartNew: () => void;
+  saving?: boolean;
 }
 
 const stageColors: Record<string, string> = {
@@ -20,9 +22,29 @@ const stageColors: Record<string, string> = {
   'Deployment & Support': 'bg-stage-deploy',
 };
 
-export function SummaryStep({ estimate, onDownload, onStartNew }: SummaryStepProps) {
+export function SummaryStep({ estimate, onSave, onStartNew, saving }: SummaryStepProps) {
+  const handleDownloadPDF = () => {
+    generatePDFReport(estimate);
+    toast.success('PDF report downloaded!');
+  };
+
   return (
     <div className="space-y-6 animate-fade-in">
+      {/* AI Historical Match */}
+      {estimate.historicalMatch && (
+        <div className="p-4 bg-primary/10 rounded-xl border border-primary/30">
+          <div className="flex items-center gap-2 mb-2">
+            <Brain className="w-5 h-5 text-primary" />
+            <span className="font-semibold text-primary">AI Memory Match</span>
+          </div>
+          <p className="text-sm text-muted-foreground">{estimate.historicalMatch.projectName}</p>
+          <p className="text-sm mt-1">
+            Based on {estimate.historicalMatch.accuracy}% similarity, suggested adjustment: 
+            <strong className="ml-1">{estimate.historicalMatch.adjustedHours}h</strong>
+          </p>
+        </div>
+      )}
+
       {/* Hero Stats */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div className="bg-card rounded-2xl p-6 shadow-card border border-primary/20">
@@ -32,12 +54,8 @@ export function SummaryStep({ estimate, onDownload, onStartNew }: SummaryStepPro
             </div>
             <span className="text-muted-foreground font-medium">Total Time</span>
           </div>
-          <div className="text-3xl font-bold text-foreground">
-            {formatDuration(estimate.totalWeeks)}
-          </div>
-          <div className="text-sm text-muted-foreground mt-1">
-            ~{estimate.totalHours} hours total
-          </div>
+          <div className="text-3xl font-bold text-foreground">{formatDuration(estimate.totalWeeks)}</div>
+          <div className="text-sm text-muted-foreground mt-1">~{estimate.totalHours} hours total</div>
         </div>
 
         <div className="bg-card rounded-2xl p-6 shadow-card border border-accent/20">
@@ -47,12 +65,8 @@ export function SummaryStep({ estimate, onDownload, onStartNew }: SummaryStepPro
             </div>
             <span className="text-muted-foreground font-medium">Total Cost</span>
           </div>
-          <div className="text-3xl font-bold text-foreground">
-            {formatCurrency(estimate.totalCost)}
-          </div>
-          <div className="text-sm text-muted-foreground mt-1">
-            Based on industry standard rates
-          </div>
+          <div className="text-3xl font-bold text-foreground">{formatCurrency(estimate.totalCost)}</div>
+          <div className="text-sm text-muted-foreground mt-1">Based on industry standard rates</div>
         </div>
       </div>
 
@@ -63,26 +77,14 @@ export function SummaryStep({ estimate, onDownload, onStartNew }: SummaryStepPro
           Project Overview
         </h3>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
-          <div>
-            <span className="text-muted-foreground">Project Name</span>
-            <p className="font-medium">{estimate.projectName}</p>
-          </div>
-          <div>
-            <span className="text-muted-foreground">Type</span>
-            <p className="font-medium capitalize">{estimate.projectType.replace('-', ' ')}</p>
-          </div>
-          <div>
-            <span className="text-muted-foreground">Platform</span>
-            <p className="font-medium capitalize">{estimate.platform.replace('-', ' ')}</p>
-          </div>
-          <div>
-            <span className="text-muted-foreground">Complexity</span>
-            <p className="font-medium capitalize">{estimate.complexity}</p>
-          </div>
+          <div><span className="text-muted-foreground">Project Name</span><p className="font-medium">{estimate.projectName}</p></div>
+          <div><span className="text-muted-foreground">Type</span><p className="font-medium capitalize">{estimate.projectType.replace('-', ' ')}</p></div>
+          <div><span className="text-muted-foreground">Platform</span><p className="font-medium capitalize">{estimate.platform.replace('-', ' ')}</p></div>
+          <div><span className="text-muted-foreground">Complexity</span><p className="font-medium capitalize">{estimate.complexity}</p></div>
         </div>
       </div>
 
-      {/* Stage Breakdown */}
+      {/* Stage Breakdown with Reasons */}
       <div className="bg-card rounded-2xl p-6 shadow-card">
         <h3 className="text-lg font-semibold mb-4">Resource Allocation by Stage</h3>
         <div className="space-y-4">
@@ -99,27 +101,40 @@ export function SummaryStep({ estimate, onDownload, onStartNew }: SummaryStepPro
                 </div>
               </div>
               
+              {/* Time Reason */}
+              <div className="p-3 bg-muted/50 rounded-lg mb-3">
+                <div className="flex items-start gap-2">
+                  <Info className="w-4 h-4 text-primary mt-0.5 flex-shrink-0" />
+                  <p className="text-sm text-muted-foreground">{stage.reason}</p>
+                </div>
+              </div>
+              
+              {/* Custom Items */}
+              {stage.customItems && stage.customItems.length > 0 && (
+                <div className="mb-3 space-y-1">
+                  {stage.customItems.map(item => (
+                    <div key={item.id} className="flex items-center justify-between text-sm p-2 bg-primary/5 rounded">
+                      <span>{item.name} <span className="text-muted-foreground">({item.complexity})</span></span>
+                      <span className="font-medium">+{item.hours}h</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+              
               <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-sm">
                 <div className="flex items-center gap-2 text-muted-foreground">
-                  <Clock className="w-4 h-4" />
-                  <span>{stage.hours} hours</span>
+                  <Clock className="w-4 h-4" /><span>{stage.hours} hours</span>
                 </div>
                 <div className="flex items-center gap-2 text-muted-foreground">
-                  <Users className="w-4 h-4" />
-                  <span>{stage.personnel} person, {stage.experience}</span>
+                  <Users className="w-4 h-4" /><span>{stage.personnel} person, {stage.experience}</span>
                 </div>
                 <div className="flex items-center gap-2 text-muted-foreground">
-                  <Wrench className="w-4 h-4" />
-                  <span className="truncate">{stage.tools.join(', ')}</span>
+                  <Wrench className="w-4 h-4" /><span className="truncate">{stage.tools.join(', ')}</span>
                 </div>
               </div>
 
-              {/* Progress bar */}
               <div className="mt-3 h-2 bg-muted rounded-full overflow-hidden">
-                <div 
-                  className={cn("h-full rounded-full transition-all", stageColors[stage.stage])}
-                  style={{ width: `${(stage.hours / estimate.totalHours) * 100}%` }}
-                />
+                <div className={cn("h-full rounded-full", stageColors[stage.stage])} style={{ width: `${(stage.hours / estimate.totalHours) * 100}%` }} />
               </div>
             </div>
           ))}
@@ -128,13 +143,13 @@ export function SummaryStep({ estimate, onDownload, onStartNew }: SummaryStepPro
 
       {/* Actions */}
       <div className="flex flex-col sm:flex-row gap-4">
-        <Button variant="hero" size="lg" className="flex-1" onClick={onDownload}>
-          <Download className="w-5 h-5" />
-          Download Report
+        <Button variant="hero" size="lg" className="flex-1" onClick={handleDownloadPDF}>
+          <Download className="w-5 h-5" /> Download PDF Report
         </Button>
-        <Button variant="outline" size="lg" className="flex-1" onClick={onStartNew}>
-          Start New Estimate
+        <Button variant="accent" size="lg" className="flex-1" onClick={onSave} disabled={saving}>
+          <Save className="w-5 h-5" /> {saving ? 'Saving...' : 'Save to History'}
         </Button>
+        <Button variant="outline" size="lg" onClick={onStartNew}>Start New</Button>
       </div>
     </div>
   );
