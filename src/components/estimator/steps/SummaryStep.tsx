@@ -1,4 +1,5 @@
-import { FileText, Clock, DollarSign, Users, Wrench, Download, Save, Info, Brain } from 'lucide-react';
+import { useState } from 'react';
+import { FileText, Clock, DollarSign, Users, Wrench, Download, Save, Info, Brain, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ProjectEstimate } from '@/types/estimator';
 import { formatCurrency, formatDuration } from '@/lib/estimationEngine';
@@ -23,9 +24,19 @@ const stageColors: Record<string, string> = {
 };
 
 export function SummaryStep({ estimate, onSave, onStartNew, saving }: SummaryStepProps) {
-  const handleDownloadPDF = () => {
-    generatePDFReport(estimate);
-    toast.success('PDF report downloaded!');
+  const [generating, setGenerating] = useState(false);
+  
+  const handleDownloadPDF = async () => {
+    setGenerating(true);
+    try {
+      await generatePDFReport(estimate);
+      toast.success('PDF report downloaded!');
+    } catch (error) {
+      console.error('PDF generation error:', error);
+      toast.error('Failed to generate PDF');
+    } finally {
+      setGenerating(false);
+    }
   };
 
   return (
@@ -143,8 +154,9 @@ export function SummaryStep({ estimate, onSave, onStartNew, saving }: SummarySte
 
       {/* Actions */}
       <div className="flex flex-col sm:flex-row gap-4">
-        <Button variant="hero" size="lg" className="flex-1" onClick={handleDownloadPDF}>
-          <Download className="w-5 h-5" /> Download PDF Report
+        <Button variant="hero" size="lg" className="flex-1" onClick={handleDownloadPDF} disabled={generating}>
+          {generating ? <Loader2 className="w-5 h-5 animate-spin" /> : <Download className="w-5 h-5" />}
+          {generating ? 'Generating...' : 'Download PDF Report'}
         </Button>
         <Button variant="accent" size="lg" className="flex-1" onClick={onSave} disabled={saving}>
           <Save className="w-5 h-5" /> {saving ? 'Saving...' : 'Save to History'}
