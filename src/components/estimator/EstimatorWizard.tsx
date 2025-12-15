@@ -58,7 +58,7 @@ export function EstimatorWizard() {
       // Check for historical matches
       const matchResult = await getHistoricalMatch(
         formData.projectType,
-        formData.platform,
+        formData.platforms[0] || 'web',
         formData.complexity,
         estimate.totalHours
       );
