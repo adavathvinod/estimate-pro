@@ -109,6 +109,17 @@ export interface DocumentAnalysis {
   suggestedComplexity: ComplexityLevel;
   suggestedFeatures: string[];
   summary: string;
+  estimatedWeeks: number;
+  estimatedHours: number;
+  estimatedCost: number;
+  breakdown?: {
+    pm: number;
+    design: number;
+    frontend: number;
+    backend: number;
+    qa: number;
+    devops: number;
+  };
 }
 
 // Available technologies

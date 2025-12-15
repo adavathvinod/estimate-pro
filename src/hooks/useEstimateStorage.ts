@@ -15,7 +15,7 @@ export function useEstimateStorage() {
         project_name: estimate.projectName,
         project_type: estimate.projectType,
         project_stage: formData.projectStage,
-        platform: estimate.platform,
+        platform: Array.isArray(estimate.platform) ? estimate.platform.join(',') : String(estimate.platform),
         complexity: estimate.complexity,
         total_hours: estimate.totalHours,
         total_weeks: estimate.totalWeeks,

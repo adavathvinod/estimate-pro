@@ -90,7 +90,7 @@ export function SummaryStep({ estimate, onSave, onStartNew, saving }: SummarySte
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
           <div><span className="text-muted-foreground">Project Name</span><p className="font-medium">{estimate.projectName}</p></div>
           <div><span className="text-muted-foreground">Type</span><p className="font-medium capitalize">{estimate.projectType.replace('-', ' ')}</p></div>
-          <div><span className="text-muted-foreground">Platform</span><p className="font-medium capitalize">{estimate.platform.replace('-', ' ')}</p></div>
+          <div><span className="text-muted-foreground">Platform</span><p className="font-medium capitalize">{Array.isArray(estimate.platform) ? estimate.platform.join(', ').replace(/-/g, ' ') : String(estimate.platform).replace('-', ' ')}</p></div>
           <div><span className="text-muted-foreground">Complexity</span><p className="font-medium capitalize">{estimate.complexity}</p></div>
         </div>
       </div>

@@ -41,7 +41,7 @@ export async function generatePDFReport(estimate: ProjectEstimate): Promise<void
   const projectInfo = [
     ['Project Name', estimate.projectName],
     ['Project Type', estimate.projectType.replace('-', ' ').toUpperCase()],
-    ['Platform', estimate.platform.replace('-', ' ').toUpperCase()],
+    ['Platform', (Array.isArray(estimate.platform) ? estimate.platform.join(', ') : String(estimate.platform)).replace(/-/g, ' ').toUpperCase()],
     ['Complexity', estimate.complexity.toUpperCase()],
   ];
   

@@ -39,8 +39,13 @@ export function PlatformStep({ data, onChange }: PlatformStepProps) {
               icon={<Icon className="w-5 h-5" />}
               title={title}
               description={description}
-              selected={data.platform === platform}
-              onClick={() => onChange({ platform })}
+              selected={data.platforms?.includes(platform)}
+              onClick={() => {
+                const newPlatforms = data.platforms?.includes(platform)
+                  ? data.platforms.filter(p => p !== platform)
+                  : [...(data.platforms || []), platform];
+                onChange({ platforms: newPlatforms.length ? newPlatforms : ['web'] });
+              }}
             />
           ))}
         </div>
