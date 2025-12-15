@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect, useRef } from 'react';
-import { Calculator, Clock, DollarSign, Download, Save, History, GitCompare, ChevronUp, Loader2, Users } from 'lucide-react';
+import { Calculator, Clock, DollarSign, Download, Save, History, GitCompare, ChevronUp, Loader2, Users, Plus, FileText } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ProjectInfoSection } from './sections/ProjectInfoSection';
 import { ExperienceSection } from './sections/ExperienceSection';
@@ -10,6 +10,8 @@ import { DevelopmentSection } from './sections/DevelopmentSection';
 import { QADeploySection } from './sections/QADeploySection';
 import { ComparisonView } from './ComparisonView';
 import { ShareEstimateDialog } from './ShareEstimateDialog';
+import { CommentsSection } from './CommentsSection';
+import { SprintBreakdown } from './SprintBreakdown';
 import { ProjectFormData, defaultFormData, ProjectEstimate, CustomItem, EXPERIENCE_LEVELS } from '@/types/estimator';
 import { calculateEstimate, formatCurrency, formatDuration } from '@/lib/estimationEngine';
 import { generatePDFReport } from '@/lib/pdfExport';
@@ -25,6 +27,8 @@ export function EstimatorForm() {
   const [showScrollTop, setShowScrollTop] = useState(false);
   const [generating, setGenerating] = useState(false);
   const [activeViewers, setActiveViewers] = useState(0);
+  
+  const [showEstimate, setShowEstimate] = useState(false);
   
   const { saveEstimate, loadEstimates, getHistoricalMatch, saving, loading } = useEstimateStorage();
   const summaryRef = useRef<HTMLDivElement>(null);
@@ -85,6 +89,24 @@ export function EstimatorForm() {
     toast.success('Estimate saved successfully!');
   };
 
+  const handleNewEstimate = () => {
+    setFormData(defaultFormData);
+    setShowEstimate(false);
+    scrollToTop();
+    toast.success('Started new estimate');
+  };
+
+  const handleGenerateEstimate = () => {
+    if (!formData.projectName.trim()) {
+      toast.error('Please enter a project name');
+      return;
+    }
+    setShowEstimate(true);
+    setTimeout(() => {
+      summaryRef.current?.scrollIntoView({ behavior: 'smooth' });
+    }, 100);
+  };
+
   const handleDownloadPDF = async () => {
     if (!formData.projectName.trim()) {
       toast.error('Please enter a project name');
@@ -141,6 +163,15 @@ export function EstimatorForm() {
               </div>
             </div>
             
+            <Button 
+              size="sm" 
+              onClick={handleNewEstimate}
+              variant="outline"
+            >
+              <Plus className="w-4 h-4" />
+              <span className="hidden sm:inline ml-1">New</span>
+            </Button>
+            
             <ShareEstimateDialog 
               estimateId={liveEstimate.id} 
               projectName={formData.projectName || 'Untitled'} 
@@ -190,98 +221,146 @@ export function EstimatorForm() {
 
       {/* Form Sections */}
       <div className="space-y-8">
-        <ProjectInfoSection data={formData} onChange={handleChange} />
+        <div>
+          <ProjectInfoSection data={formData} onChange={handleChange} />
+          <CommentsSection section="project-info" sectionLabel="Project Info" />
+        </div>
         
         <div className="h-px bg-border" />
         
-        <ExperienceSection data={formData} onChange={handleChange} />
+        <div>
+          <ExperienceSection data={formData} onChange={handleChange} />
+          <CommentsSection section="experience" sectionLabel="Experience Level" />
+        </div>
         
         <div className="h-px bg-border" />
         
-        <TechnologySection data={formData} onChange={handleChange} />
+        <div>
+          <TechnologySection data={formData} onChange={handleChange} />
+          <CommentsSection section="technology" sectionLabel="Technologies" />
+        </div>
         
         <div className="h-px bg-border" />
         
-        <PlatformSection data={formData} onChange={handleChange} />
+        <div>
+          <PlatformSection data={formData} onChange={handleChange} />
+          <CommentsSection section="platform" sectionLabel="Platforms" />
+        </div>
         
         <div className="h-px bg-border" />
         
-        <PMSection data={formData} onChange={handleChange} onCustomItemsChange={handleCustomItemsChange} />
+        <div>
+          <PMSection data={formData} onChange={handleChange} onCustomItemsChange={handleCustomItemsChange} />
+          <CommentsSection section="pm" sectionLabel="Project Management" />
+        </div>
         
         <div className="h-px bg-border" />
         
-        <DevelopmentSection data={formData} onChange={handleChange} onCustomItemsChange={handleCustomItemsChange} />
+        <div>
+          <DevelopmentSection data={formData} onChange={handleChange} onCustomItemsChange={handleCustomItemsChange} />
+          <CommentsSection section="development" sectionLabel="Development" />
+        </div>
         
         <div className="h-px bg-border" />
         
-        <QADeploySection data={formData} onChange={handleChange} onCustomItemsChange={handleCustomItemsChange} />
+        <div>
+          <QADeploySection data={formData} onChange={handleChange} onCustomItemsChange={handleCustomItemsChange} />
+          <CommentsSection section="qa-deploy" sectionLabel="QA & Deployment" />
+        </div>
+      </div>
+
+      {/* Generate Estimate Button */}
+      <div className="mt-8 flex justify-center">
+        <Button 
+          size="lg" 
+          onClick={handleGenerateEstimate}
+          className="px-8"
+        >
+          <FileText className="w-5 h-5 mr-2" />
+          Generate Estimate
+        </Button>
       </div>
 
       {/* Summary Section */}
-      <div ref={summaryRef} className="mt-12 p-6 border-2 border-primary rounded-xl bg-card">
-        <h2 className="text-2xl font-bold mb-6 flex items-center gap-2">
-          <Calculator className="w-6 h-6 text-primary" />
-          Final Estimate
-        </h2>
+      {showEstimate && (
+        <div ref={summaryRef} className="mt-12 space-y-6">
+          <div className="p-6 border-2 border-primary rounded-xl bg-card">
+            <h2 className="text-2xl font-bold mb-6 flex items-center gap-2">
+              <Calculator className="w-6 h-6 text-primary" />
+              Final Estimate
+            </h2>
 
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-          <div className="p-4 bg-muted rounded-lg text-center">
-            <Clock className="w-6 h-6 mx-auto mb-2 text-primary" />
-            <div className="text-2xl font-bold">{formatDuration(liveEstimate.totalWeeks)}</div>
-            <div className="text-sm text-muted-foreground">Duration</div>
-          </div>
-          <div className="p-4 bg-muted rounded-lg text-center">
-            <DollarSign className="w-6 h-6 mx-auto mb-2 text-primary" />
-            <div className="text-2xl font-bold">{formatCurrency(liveEstimate.totalCost)}</div>
-            <div className="text-sm text-muted-foreground">Total Cost</div>
-          </div>
-          <div className="p-4 bg-muted rounded-lg text-center">
-            <div className="text-2xl font-bold">{liveEstimate.totalHours}</div>
-            <div className="text-sm text-muted-foreground">Total Hours</div>
-          </div>
-          <div className="p-4 bg-muted rounded-lg text-center">
-            <div className="text-2xl font-bold">{liveEstimate.stages.length}</div>
-            <div className="text-sm text-muted-foreground">Stages</div>
-          </div>
-        </div>
-
-        {/* Stage Breakdown */}
-        <div className="space-y-3 mb-6">
-          <h4 className="font-semibold">Stage Breakdown</h4>
-          {liveEstimate.stages.map((stage, index) => (
-            <div key={index} className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
-              <span className="font-medium capitalize">{stage.stage}</span>
-              <div className="flex items-center gap-4 text-sm">
-                <span>{stage.hours}h</span>
-                <span className="text-muted-foreground">{formatCurrency(stage.cost)}</span>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+              <div className="p-4 bg-muted rounded-lg text-center">
+                <Clock className="w-6 h-6 mx-auto mb-2 text-primary" />
+                <div className="text-2xl font-bold">{formatDuration(liveEstimate.totalWeeks)}</div>
+                <div className="text-sm text-muted-foreground">Duration</div>
+              </div>
+              <div className="p-4 bg-muted rounded-lg text-center">
+                <DollarSign className="w-6 h-6 mx-auto mb-2 text-primary" />
+                <div className="text-2xl font-bold">{formatCurrency(liveEstimate.totalCost)}</div>
+                <div className="text-sm text-muted-foreground">Total Cost</div>
+              </div>
+              <div className="p-4 bg-muted rounded-lg text-center">
+                <div className="text-2xl font-bold">{liveEstimate.totalHours}</div>
+                <div className="text-sm text-muted-foreground">Total Hours</div>
+              </div>
+              <div className="p-4 bg-muted rounded-lg text-center">
+                <div className="text-2xl font-bold">{liveEstimate.stages.length}</div>
+                <div className="text-sm text-muted-foreground">Stages</div>
               </div>
             </div>
-          ))}
-        </div>
 
-        {/* Actions */}
-        <div className="flex flex-col sm:flex-row gap-3">
-          <Button 
-            onClick={handleDownloadPDF} 
-            disabled={generating || !formData.projectName.trim()}
-            className="flex-1"
-            size="lg"
-          >
-            {generating ? <Loader2 className="w-5 h-5 animate-spin mr-2" /> : <Download className="w-5 h-5 mr-2" />}
-            {generating ? 'Generating...' : 'Download PDF'}
-          </Button>
-          <Button 
-            variant="outline" 
-            onClick={handleSaveEstimate} 
-            disabled={saving || !formData.projectName.trim()}
-            className="flex-1"
-            size="lg"
-          >
-            <Save className="w-5 h-5 mr-2" />
-            {saving ? 'Saving...' : 'Save Estimate'}
-          </Button>
+            {/* Stage Breakdown */}
+            <div className="space-y-3 mb-6">
+              <h4 className="font-semibold">Stage Breakdown</h4>
+              {liveEstimate.stages.map((stage, index) => (
+                <div key={index} className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
+                  <span className="font-medium capitalize">{stage.stage}</span>
+                  <div className="flex items-center gap-4 text-sm">
+                    <span>{stage.hours}h</span>
+                    <span className="text-muted-foreground">{formatCurrency(stage.cost)}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Actions */}
+            <div className="flex flex-col sm:flex-row gap-3">
+              <Button 
+                onClick={handleDownloadPDF} 
+                disabled={generating || !formData.projectName.trim()}
+                className="flex-1"
+                size="lg"
+              >
+                {generating ? <Loader2 className="w-5 h-5 animate-spin mr-2" /> : <Download className="w-5 h-5 mr-2" />}
+                {generating ? 'Generating...' : 'Download PDF'}
+              </Button>
+              <Button 
+                variant="outline" 
+                onClick={handleSaveEstimate} 
+                disabled={saving || !formData.projectName.trim()}
+                className="flex-1"
+                size="lg"
+              >
+                <Save className="w-5 h-5 mr-2" />
+                {saving ? 'Saving...' : 'Save Estimate'}
+              </Button>
+              <Button 
+                variant="outline" 
+                onClick={handleNewEstimate}
+                size="lg"
+              >
+                <Plus className="w-5 h-5 mr-2" />
+                New Estimate
+              </Button>
+            </div>
+          </div>
+
+          {/* Sprint Breakdown */}
+          <SprintBreakdown stages={liveEstimate.stages} totalWeeks={liveEstimate.totalWeeks} />
         </div>
-      </div>
+      )}
 
       {/* Scroll to Top Button */}
       {showScrollTop && (
