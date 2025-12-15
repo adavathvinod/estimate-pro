@@ -1,14 +1,15 @@
-import { Code, Database, Sparkles, Link, Shield, HardDrive } from 'lucide-react';
+import { Code, Database, Sparkles, Shield, HardDrive } from 'lucide-react';
 import { StepCard } from '../StepCard';
 import { FormField } from '../FormField';
-import { SelectionCard } from '../SelectionCard';
+import { CustomItemEditor } from '../CustomItemEditor';
 import { Slider } from '@/components/ui/slider';
-import { ProjectFormData, STAGE_PERSONNEL, ComplexityLevel } from '@/types/estimator';
+import { ProjectFormData, STAGE_PERSONNEL, ComplexityLevel, CustomItem } from '@/types/estimator';
 import { cn } from '@/lib/utils';
 
 interface DevelopmentStepProps {
   data: ProjectFormData;
   onChange: (updates: Partial<ProjectFormData>) => void;
+  onCustomItemsChange: (customItems: CustomItem[]) => void;
 }
 
 const animationOptions = [
@@ -29,7 +30,7 @@ const databaseOptions = [
   { value: 'enterprise', title: 'Enterprise', description: '1M+ records' },
 ] as const;
 
-export function DevelopmentStep({ data, onChange }: DevelopmentStepProps) {
+export function DevelopmentStep({ data, onChange, onCustomItemsChange }: DevelopmentStepProps) {
   return (
     <div className="space-y-6">
       <StepCard
@@ -90,6 +91,13 @@ export function DevelopmentStep({ data, onChange }: DevelopmentStepProps) {
             <span>15+</span>
           </div>
         </FormField>
+
+        <CustomItemEditor
+          items={data.customItems}
+          stage="frontend"
+          stageName="Frontend"
+          onChange={onCustomItemsChange}
+        />
       </StepCard>
 
       <StepCard
@@ -175,6 +183,13 @@ export function DevelopmentStep({ data, onChange }: DevelopmentStepProps) {
             ))}
           </div>
         </FormField>
+
+        <CustomItemEditor
+          items={data.customItems}
+          stage="backend"
+          stageName="Backend"
+          onChange={onCustomItemsChange}
+        />
       </StepCard>
     </div>
   );
