@@ -1,1 +1,10 @@
 project_id = "zpumdeynistkzbsgweim"
+
+[functions.analyze-document]
+verify_jwt = false
+
+[functions.get-historical-match]
+verify_jwt = false
+
+[functions.analyze-project]
+verify_jwt = false
