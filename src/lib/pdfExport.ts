@@ -199,6 +199,101 @@ export async function generatePDFReport(estimate: ProjectEstimate): Promise<void
     
     yPos += 38 + (stage.customItems?.length || 0) * 8;
   });
+
+  // Resource Allocation & Hardware Planning Section
+  if (estimate.resourceAllocation) {
+    if (yPos > 180) {
+      doc.addPage();
+      yPos = 20;
+    }
+
+    doc.setFontSize(16);
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(...primaryColor);
+    doc.text('Resource Allocation & Hardware Planning', 14, yPos);
+    yPos += 15;
+
+    // Staffing Plan
+    doc.setFontSize(12);
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(...textColor);
+    doc.text('FTE Staffing Plan', 14, yPos);
+    yPos += 8;
+
+    const staffingData = [
+      ['Frontend Developers', String(estimate.resourceAllocation.staffing.frontend)],
+      ['Backend Developers', String(estimate.resourceAllocation.staffing.backend)],
+      ['QA Specialists', String(estimate.resourceAllocation.staffing.qa)],
+      ['Project Managers', String(estimate.resourceAllocation.staffing.pm)],
+      ['DevOps Engineers', String(estimate.resourceAllocation.staffing.devops)],
+      ['Total Team Size', String(estimate.resourceAllocation.staffing.total) + ' FTE'],
+    ];
+
+    autoTable(doc, {
+      startY: yPos,
+      head: [['Role', 'Count']],
+      body: staffingData,
+      theme: 'striped',
+      headStyles: {
+        fillColor: primaryColor,
+        textColor: [255, 255, 255],
+        fontStyle: 'bold',
+        fontSize: 9
+      },
+      bodyStyles: { fontSize: 9 },
+      columnStyles: {
+        0: { cellWidth: 60 },
+        1: { cellWidth: 30 }
+      },
+      margin: { left: 14 }
+    });
+
+    yPos = (doc as any).lastAutoTable.finalY + 15;
+
+    // Project Duration
+    doc.setFontSize(11);
+    doc.setFont('helvetica', 'normal');
+    doc.text(`Desired Project Duration: ${estimate.resourceAllocation.desiredDurationMonths} months`, 14, yPos);
+    yPos += 8;
+    doc.text(`Working Hours per FTE/Month: ${estimate.resourceAllocation.workingHoursPerMonth}h`, 14, yPos);
+    yPos += 15;
+
+    // Hardware Checklist
+    doc.setFontSize(12);
+    doc.setFont('helvetica', 'bold');
+    doc.text('Hardware & Environment Checklist', 14, yPos);
+    yPos += 10;
+
+    const hw = estimate.resourceAllocation.hardware;
+    const hardwareItems = [
+      ['Linux Server', hw.linuxServer ? '✓ Required' : '✗ Not Required'],
+      ['Mac OS Build Machine', hw.macOsBuildMachine ? '✓ Required' : '✗ Not Required'],
+      ['Staging Environment', hw.stagingEnvironment ? '✓ Required' : '✗ Not Required'],
+      ['Production Server', hw.productionServer ? '✓ Required' : '✗ Not Required'],
+      ['CI/CD Pipeline', hw.cicdPipeline ? '✓ Required' : '✗ Not Required'],
+    ];
+
+    autoTable(doc, {
+      startY: yPos,
+      head: [['Infrastructure', 'Status']],
+      body: hardwareItems,
+      theme: 'striped',
+      headStyles: {
+        fillColor: accentColor,
+        textColor: [255, 255, 255],
+        fontStyle: 'bold',
+        fontSize: 9
+      },
+      bodyStyles: { fontSize: 9 },
+      columnStyles: {
+        0: { cellWidth: 60 },
+        1: { cellWidth: 40 }
+      },
+      margin: { left: 14 }
+    });
+
+    yPos = (doc as any).lastAutoTable.finalY + 10;
+  }
   
   // Footer
   const totalPages = doc.internal.pages.length - 1;

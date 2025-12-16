@@ -17,6 +17,7 @@ import { HistoricalMatchPanel } from './HistoricalMatchPanel';
 import { RealtimePresence } from './RealtimePresence';
 import { IndustryTemplateSelector } from './IndustryTemplateSelector';
 import { AnalyticsDashboard } from './AnalyticsDashboard';
+import { ResourceAllocationPlanner, ResourceAllocation } from './ResourceAllocationPlanner';
 import { ProjectFormData, defaultFormData, ProjectEstimate, CustomItem, EXPERIENCE_LEVELS } from '@/types/estimator';
 import { calculateEstimate, formatCurrency, formatDuration } from '@/lib/estimationEngine';
 import { generatePDFReport } from '@/lib/pdfExport';
@@ -34,6 +35,7 @@ export function EstimatorForm() {
   const [generating, setGenerating] = useState(false);
   const [activeTab, setActiveTab] = useState<'estimator' | 'analytics'>('estimator');
   const [appliedTemplate, setAppliedTemplate] = useState<IndustryTemplate | null>(null);
+  const [resourceAllocation, setResourceAllocation] = useState<ResourceAllocation | null>(null);
   
   const [showEstimate, setShowEstimate] = useState(false);
   
@@ -64,8 +66,9 @@ export function EstimatorForm() {
       totalCost: Math.round(baseEstimate.totalCost * multiplier * platformMultiplier),
       teamExperience: formData.teamExperience,
       technologies: formData.technologies,
+      resourceAllocation: resourceAllocation || undefined,
     };
-  }, [formData]);
+  }, [formData, resourceAllocation]);
 
   useEffect(() => {
     loadEstimates().then(setHistoricalEstimates);
@@ -404,6 +407,15 @@ export function EstimatorForm() {
 
           {/* Sprint Breakdown */}
           <SprintBreakdown stages={liveEstimate.stages} totalWeeks={liveEstimate.totalWeeks} />
+
+          {/* Resource Allocation & Hardware Planning */}
+          <ResourceAllocationPlanner
+            totalHours={liveEstimate.totalHours}
+            totalWeeks={liveEstimate.totalWeeks}
+            stages={liveEstimate.stages}
+            platforms={formData.platforms}
+            onAllocationChange={setResourceAllocation}
+          />
 
           {/* Historical Match Panel */}
           <HistoricalMatchPanel

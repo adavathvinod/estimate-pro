@@ -26,6 +26,26 @@ export interface StageEstimate {
   customItems?: CustomItem[];
 }
 
+export interface ResourceAllocation {
+  desiredDurationMonths: number;
+  staffing: {
+    frontend: number;
+    backend: number;
+    qa: number;
+    pm: number;
+    devops: number;
+    total: number;
+  };
+  hardware: {
+    linuxServer: boolean;
+    macOsBuildMachine: boolean;
+    stagingEnvironment: boolean;
+    productionServer: boolean;
+    cicdPipeline: boolean;
+  };
+  workingHoursPerMonth: number;
+}
+
 export interface ProjectEstimate {
   id: string;
   projectName: string;
@@ -46,6 +66,7 @@ export interface ProjectEstimate {
   };
   teamExperience?: ExperienceLevel;
   technologies?: string[];
+  resourceAllocation?: ResourceAllocation;
 }
 
 export interface ProjectFormData {
