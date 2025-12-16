@@ -20,6 +20,9 @@ import { IndustryTemplateSelector } from './IndustryTemplateSelector';
 import { AnalyticsDashboard } from './AnalyticsDashboard';
 import { ResourceAllocationPlanner } from './ResourceAllocationPlanner';
 import { TeamVelocityTracker } from './TeamVelocityTracker';
+import { RiskAssessmentModule } from './RiskAssessmentModule';
+import { TeamSkillMatrix } from './TeamSkillMatrix';
+import { BudgetForecast } from './BudgetForecast';
 import { ResourceAllocation } from '@/types/estimator';
 import { ProjectFormData, defaultFormData, ProjectEstimate, CustomItem, EXPERIENCE_LEVELS } from '@/types/estimator';
 import { calculateEstimate, formatCurrency, formatDuration } from '@/lib/estimationEngine';
@@ -481,6 +484,26 @@ export function EstimatorForm() {
             onApplyAdjustment={(adjustedHours) => {
               toast.info(`Historical data suggests ${adjustedHours} hours - consider adjusting your estimate`);
             }}
+          />
+
+          {/* Risk Assessment Module */}
+          <RiskAssessmentModule
+            formData={formData}
+            totalHours={liveEstimate.totalHours}
+            totalCost={liveEstimate.totalCost}
+          />
+
+          {/* Team Skill Matrix */}
+          <TeamSkillMatrix
+            requiredTechnologies={formData.technologies}
+          />
+
+          {/* Budget Forecast */}
+          <BudgetForecast
+            totalCost={liveEstimate.totalCost}
+            totalWeeks={liveEstimate.totalWeeks}
+            resourceAllocation={resourceAllocation}
+            stages={liveEstimate.stages}
           />
         </div>
       )}
