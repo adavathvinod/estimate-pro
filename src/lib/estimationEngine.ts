@@ -201,20 +201,31 @@ export function calculateEstimate(data: ProjectFormData): ProjectEstimate {
   };
 }
 
+// Safe number helper to prevent NaN
+export function safeNumber(value: number, fallback: number = 0): number {
+  if (typeof value !== 'number' || isNaN(value) || !isFinite(value)) {
+    return fallback;
+  }
+  return value;
+}
+
 export function formatCurrency(amount: number): string {
+  const safeAmount = safeNumber(amount);
   return new Intl.NumberFormat('en-US', {
     style: 'currency',
     currency: 'USD',
     minimumFractionDigits: 0,
     maximumFractionDigits: 0,
-  }).format(amount);
+  }).format(safeAmount);
 }
 
 export function formatDuration(weeks: number): string {
-  if (weeks < 1) return `${Math.round(weeks * 5)} days`;
-  const months = Math.floor(weeks / 4);
-  const remainingWeeks = Math.round(weeks % 4);
-  if (months === 0) return `${Math.round(weeks)} week${weeks !== 1 ? 's' : ''}`;
+  const safeWeeks = safeNumber(weeks);
+  if (safeWeeks <= 0) return '--';
+  if (safeWeeks < 1) return `${Math.round(safeWeeks * 5)} days`;
+  const months = Math.floor(safeWeeks / 4);
+  const remainingWeeks = Math.round(safeWeeks % 4);
+  if (months === 0) return `${Math.round(safeWeeks)} week${safeWeeks !== 1 ? 's' : ''}`;
   if (remainingWeeks === 0) return `${months} month${months !== 1 ? 's' : ''}`;
   return `${months} month${months !== 1 ? 's' : ''}, ${remainingWeeks} week${remainingWeeks !== 1 ? 's' : ''}`;
 }
