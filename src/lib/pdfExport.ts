@@ -275,8 +275,19 @@ export async function generatePDFReport(estimate: ProjectEstimate): Promise<void
 
     autoTable(doc, {
       startY: yPos,
-      head: [['Infrastructure', 'Status']],
-      body: hardwareItems,
+      head: [['Infrastructure', 'Status', 'Monthly Cost']],
+      body: hardwareItems.map(item => {
+        const hw = estimate.resourceAllocation!.hardware;
+        const costs = estimate.resourceAllocation?.hardwareCosts;
+        const costMap: Record<string, number | undefined> = {
+          'Linux Server': costs?.linuxServer,
+          'Mac OS Build Machine': costs?.macOsBuildMachine,
+          'Staging Environment': costs?.stagingEnvironment,
+          'Production Server': costs?.productionServer,
+          'CI/CD Pipeline': costs?.cicdPipeline,
+        };
+        return [...item, costMap[item[0]] ? formatCurrency(costMap[item[0]]!) : '-'];
+      }),
       theme: 'striped',
       headStyles: {
         fillColor: accentColor,
@@ -286,13 +297,29 @@ export async function generatePDFReport(estimate: ProjectEstimate): Promise<void
       },
       bodyStyles: { fontSize: 9 },
       columnStyles: {
-        0: { cellWidth: 60 },
-        1: { cellWidth: 40 }
+        0: { cellWidth: 50 },
+        1: { cellWidth: 35 },
+        2: { cellWidth: 30 }
       },
       margin: { left: 14 }
     });
 
     yPos = (doc as any).lastAutoTable.finalY + 10;
+
+    // Hardware Cost Summary
+    if (estimate.resourceAllocation.hardwareCosts) {
+      const costs = estimate.resourceAllocation.hardwareCosts;
+      doc.setFontSize(11);
+      doc.setFont('helvetica', 'bold');
+      doc.text('Infrastructure Cost Summary', 14, yPos);
+      yPos += 8;
+      
+      doc.setFont('helvetica', 'normal');
+      doc.text(`Monthly Infrastructure Cost: ${formatCurrency(costs.totalMonthly)}`, 14, yPos);
+      yPos += 6;
+      doc.text(`Total Project Infrastructure (${estimate.resourceAllocation.desiredDurationMonths} months): ${formatCurrency(costs.totalProject)}`, 14, yPos);
+      yPos += 10;
+    }
   }
   
   // Footer

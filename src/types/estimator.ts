@@ -26,6 +26,16 @@ export interface StageEstimate {
   customItems?: CustomItem[];
 }
 
+export interface HardwareCosts {
+  linuxServer: number;
+  macOsBuildMachine: number;
+  stagingEnvironment: number;
+  productionServer: number;
+  cicdPipeline: number;
+  totalMonthly: number;
+  totalProject: number;
+}
+
 export interface ResourceAllocation {
   desiredDurationMonths: number;
   staffing: {
@@ -43,6 +53,7 @@ export interface ResourceAllocation {
     productionServer: boolean;
     cicdPipeline: boolean;
   };
+  hardwareCosts?: HardwareCosts;
   workingHoursPerMonth: number;
 }
 
