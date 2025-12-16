@@ -23,6 +23,8 @@ import { TeamVelocityTracker } from './TeamVelocityTracker';
 import { RiskAssessmentModule } from './RiskAssessmentModule';
 import { TeamSkillMatrix } from './TeamSkillMatrix';
 import { BudgetForecast } from './BudgetForecast';
+import { ScenarioAnalysis } from './ScenarioAnalysis';
+import { MilestoneTracking } from './MilestoneTracking';
 import { ResourceAllocation } from '@/types/estimator';
 import { ProjectFormData, defaultFormData, ProjectEstimate, CustomItem, EXPERIENCE_LEVELS } from '@/types/estimator';
 import { calculateEstimate, formatCurrency, formatDuration } from '@/lib/estimationEngine';
@@ -504,6 +506,15 @@ export function EstimatorForm() {
             totalWeeks={liveEstimate.totalWeeks}
             resourceAllocation={resourceAllocation}
             stages={liveEstimate.stages}
+          />
+
+          {/* What-If Scenario Analysis */}
+          <ScenarioAnalysis baseFormData={formData} />
+
+          {/* Milestone Tracking */}
+          <MilestoneTracking
+            stages={liveEstimate.stages}
+            totalWeeks={liveEstimate.totalWeeks}
           />
         </div>
       )}
