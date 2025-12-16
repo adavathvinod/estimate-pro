@@ -1,7 +1,8 @@
 import { useState, useMemo, useEffect, useRef } from 'react';
-import { Calculator, Clock, DollarSign, Download, Save, History, GitCompare, ChevronUp, Loader2, Plus, FileText, BarChart3, Sparkles } from 'lucide-react';
+import { Calculator, Clock, DollarSign, Download, Save, History, GitCompare, ChevronUp, Loader2, Plus, FileText, BarChart3, Sparkles, FileSpreadsheet, TrendingUp } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { ProjectInfoSection } from './sections/ProjectInfoSection';
 import { ExperienceSection } from './sections/ExperienceSection';
 import { TechnologySection } from './sections/TechnologySection';
@@ -17,10 +18,13 @@ import { HistoricalMatchPanel } from './HistoricalMatchPanel';
 import { RealtimePresence } from './RealtimePresence';
 import { IndustryTemplateSelector } from './IndustryTemplateSelector';
 import { AnalyticsDashboard } from './AnalyticsDashboard';
-import { ResourceAllocationPlanner, ResourceAllocation } from './ResourceAllocationPlanner';
+import { ResourceAllocationPlanner } from './ResourceAllocationPlanner';
+import { TeamVelocityTracker } from './TeamVelocityTracker';
+import { ResourceAllocation } from '@/types/estimator';
 import { ProjectFormData, defaultFormData, ProjectEstimate, CustomItem, EXPERIENCE_LEVELS } from '@/types/estimator';
 import { calculateEstimate, formatCurrency, formatDuration } from '@/lib/estimationEngine';
 import { generatePDFReport } from '@/lib/pdfExport';
+import { generateCSVReport, generateExcelReport } from '@/lib/csvExport';
 import { useEstimateStorage } from '@/hooks/useEstimateStorage';
 import { toast } from 'sonner';
 import { IndustryTemplate } from '@/lib/industryTemplates';
@@ -33,7 +37,7 @@ export function EstimatorForm() {
   const [selectedForCompare, setSelectedForCompare] = useState<string[]>([]);
   const [showScrollTop, setShowScrollTop] = useState(false);
   const [generating, setGenerating] = useState(false);
-  const [activeTab, setActiveTab] = useState<'estimator' | 'analytics'>('estimator');
+  const [activeTab, setActiveTab] = useState<'estimator' | 'analytics' | 'velocity'>('estimator');
   const [appliedTemplate, setAppliedTemplate] = useState<IndustryTemplate | null>(null);
   const [resourceAllocation, setResourceAllocation] = useState<ResourceAllocation | null>(null);
   
@@ -134,6 +138,34 @@ export function EstimatorForm() {
     }
   };
 
+  const handleDownloadCSV = () => {
+    if (!formData.projectName.trim()) {
+      toast.error('Please enter a project name');
+      return;
+    }
+    try {
+      generateCSVReport(liveEstimate);
+      toast.success('CSV report downloaded!');
+    } catch (error) {
+      console.error('CSV generation error:', error);
+      toast.error('Failed to generate CSV');
+    }
+  };
+
+  const handleDownloadExcel = () => {
+    if (!formData.projectName.trim()) {
+      toast.error('Please enter a project name');
+      return;
+    }
+    try {
+      generateExcelReport(liveEstimate);
+      toast.success('Excel report downloaded!');
+    } catch (error) {
+      console.error('Excel generation error:', error);
+      toast.error('Failed to generate Excel');
+    }
+  };
+
   const toggleCompareSelection = (id: string) => {
     setSelectedForCompare(prev => 
       prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id].slice(-4)
@@ -159,6 +191,10 @@ export function EstimatorForm() {
                 <TabsTrigger value="analytics" className="flex items-center gap-1">
                   <BarChart3 className="w-4 h-4" />
                   <span className="hidden sm:inline">Analytics</span>
+                </TabsTrigger>
+                <TabsTrigger value="velocity" className="flex items-center gap-1">
+                  <TrendingUp className="w-4 h-4" />
+                  <span className="hidden sm:inline">Velocity</span>
                 </TabsTrigger>
               </TabsList>
             </Tabs>
@@ -246,6 +282,8 @@ export function EstimatorForm() {
       {/* Tab Content */}
       {activeTab === 'analytics' ? (
         <AnalyticsDashboard />
+      ) : activeTab === 'velocity' ? (
+        <TeamVelocityTracker />
       ) : (
         <>
           {/* Industry Template Selector */}
@@ -375,15 +413,32 @@ export function EstimatorForm() {
 
             {/* Actions */}
             <div className="flex flex-col sm:flex-row gap-3">
-              <Button 
-                onClick={handleDownloadPDF} 
-                disabled={generating || !formData.projectName.trim()}
-                className="flex-1"
-                size="lg"
-              >
-                {generating ? <Loader2 className="w-5 h-5 animate-spin mr-2" /> : <Download className="w-5 h-5 mr-2" />}
-                {generating ? 'Generating...' : 'Download PDF'}
-              </Button>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button 
+                    disabled={generating || !formData.projectName.trim()}
+                    className="flex-1"
+                    size="lg"
+                  >
+                    {generating ? <Loader2 className="w-5 h-5 animate-spin mr-2" /> : <Download className="w-5 h-5 mr-2" />}
+                    {generating ? 'Generating...' : 'Export'}
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent>
+                  <DropdownMenuItem onClick={handleDownloadPDF}>
+                    <FileText className="w-4 h-4 mr-2" />
+                    Download PDF
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={handleDownloadCSV}>
+                    <FileSpreadsheet className="w-4 h-4 mr-2" />
+                    Download CSV
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={handleDownloadExcel}>
+                    <FileSpreadsheet className="w-4 h-4 mr-2" />
+                    Download Excel
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
               <Button 
                 variant="outline" 
                 onClick={handleSaveEstimate} 

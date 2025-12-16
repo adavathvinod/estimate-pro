@@ -1,12 +1,13 @@
 import { useState, useEffect, useMemo } from 'react';
-import { Users, Server, Monitor, HardDrive, Settings, Calculator, Clock } from 'lucide-react';
+import { Users, Server, Monitor, HardDrive, Settings, Calculator, Clock, DollarSign } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Slider } from '@/components/ui/slider';
 import { Badge } from '@/components/ui/badge';
-import { Platform } from '@/types/estimator';
+import { Platform, ResourceAllocation, HardwareCosts } from '@/types/estimator';
+import { formatCurrency } from '@/lib/estimationEngine';
 
 interface ResourceAllocationPlannerProps {
   totalHours: number;
@@ -16,25 +17,14 @@ interface ResourceAllocationPlannerProps {
   onAllocationChange?: (allocation: ResourceAllocation) => void;
 }
 
-export interface ResourceAllocation {
-  desiredDurationMonths: number;
-  staffing: {
-    frontend: number;
-    backend: number;
-    qa: number;
-    pm: number;
-    devops: number;
-    total: number;
-  };
-  hardware: {
-    linuxServer: boolean;
-    macOsBuildMachine: boolean;
-    stagingEnvironment: boolean;
-    productionServer: boolean;
-    cicdPipeline: boolean;
-  };
-  workingHoursPerMonth: number;
-}
+// Monthly hardware cost estimates (in USD)
+const HARDWARE_COSTS = {
+  linuxServer: 150,        // Basic cloud Linux server
+  macOsBuildMachine: 400,  // Mac Mini rental for CI/CD
+  stagingEnvironment: 100, // Staging server costs
+  productionServer: 300,   // Production server base cost
+  cicdPipeline: 50,        // CI/CD service costs (GitHub Actions, etc.)
+};
 
 const HOURS_PER_FTE_PER_MONTH = 160; // 40 hours/week * 4 weeks
 
@@ -96,15 +86,33 @@ export function ResourceAllocationPlanner({
     };
   }, [totalHours, desiredDurationMonths, stages]);
 
+  // Calculate hardware costs
+  const hardwareCosts = useMemo((): HardwareCosts => {
+    const costs = {
+      linuxServer: hardware.linuxServer ? HARDWARE_COSTS.linuxServer : 0,
+      macOsBuildMachine: hardware.macOsBuildMachine ? HARDWARE_COSTS.macOsBuildMachine : 0,
+      stagingEnvironment: hardware.stagingEnvironment ? HARDWARE_COSTS.stagingEnvironment : 0,
+      productionServer: hardware.productionServer ? HARDWARE_COSTS.productionServer : 0,
+      cicdPipeline: hardware.cicdPipeline ? HARDWARE_COSTS.cicdPipeline : 0,
+      totalMonthly: 0,
+      totalProject: 0,
+    };
+    costs.totalMonthly = costs.linuxServer + costs.macOsBuildMachine + costs.stagingEnvironment + 
+                         costs.productionServer + costs.cicdPipeline;
+    costs.totalProject = costs.totalMonthly * desiredDurationMonths;
+    return costs;
+  }, [hardware, desiredDurationMonths]);
+
   // Emit changes
   useEffect(() => {
     onAllocationChange?.({
       desiredDurationMonths,
       staffing,
       hardware,
+      hardwareCosts,
       workingHoursPerMonth: HOURS_PER_FTE_PER_MONTH,
     });
-  }, [desiredDurationMonths, staffing, hardware, onAllocationChange]);
+  }, [desiredDurationMonths, staffing, hardware, hardwareCosts, onAllocationChange]);
 
   const handleHardwareChange = (key: keyof typeof hardware) => {
     setHardware(prev => ({ ...prev, [key]: !prev[key] }));
@@ -273,6 +281,58 @@ export function ResourceAllocationPlanner({
           </div>
         </div>
 
+        {/* Hardware Cost Summary */}
+        <div className="space-y-4">
+          <div className="flex items-center gap-2 mb-3">
+            <DollarSign className="w-5 h-5 text-primary" />
+            <h4 className="font-semibold">Infrastructure Cost Estimate</h4>
+          </div>
+          
+          <div className="grid gap-2">
+            {hardware.linuxServer && (
+              <div className="flex justify-between text-sm p-2 bg-muted/50 rounded">
+                <span>Linux Server</span>
+                <span className="font-medium">{formatCurrency(HARDWARE_COSTS.linuxServer)}/mo</span>
+              </div>
+            )}
+            {hardware.macOsBuildMachine && (
+              <div className="flex justify-between text-sm p-2 bg-muted/50 rounded">
+                <span>Mac OS Build Machine</span>
+                <span className="font-medium">{formatCurrency(HARDWARE_COSTS.macOsBuildMachine)}/mo</span>
+              </div>
+            )}
+            {hardware.stagingEnvironment && (
+              <div className="flex justify-between text-sm p-2 bg-muted/50 rounded">
+                <span>Staging Environment</span>
+                <span className="font-medium">{formatCurrency(HARDWARE_COSTS.stagingEnvironment)}/mo</span>
+              </div>
+            )}
+            {hardware.productionServer && (
+              <div className="flex justify-between text-sm p-2 bg-muted/50 rounded">
+                <span>Production Server</span>
+                <span className="font-medium">{formatCurrency(HARDWARE_COSTS.productionServer)}/mo</span>
+              </div>
+            )}
+            {hardware.cicdPipeline && (
+              <div className="flex justify-between text-sm p-2 bg-muted/50 rounded">
+                <span>CI/CD Pipeline</span>
+                <span className="font-medium">{formatCurrency(HARDWARE_COSTS.cicdPipeline)}/mo</span>
+              </div>
+            )}
+          </div>
+
+          <div className="p-3 bg-accent/10 border border-accent/20 rounded-lg">
+            <div className="flex justify-between items-center">
+              <span className="font-medium">Monthly Infrastructure Cost</span>
+              <span className="text-lg font-bold text-accent-foreground">{formatCurrency(hardwareCosts.totalMonthly)}</span>
+            </div>
+            <div className="flex justify-between items-center mt-2 pt-2 border-t border-accent/20">
+              <span className="font-medium">Total Project Infrastructure ({desiredDurationMonths} months)</span>
+              <span className="text-xl font-bold text-primary">{formatCurrency(hardwareCosts.totalProject)}</span>
+            </div>
+          </div>
+        </div>
+
         {/* Summary */}
         <div className="p-4 bg-primary/5 border border-primary/20 rounded-lg">
           <h5 className="font-semibold mb-2">Resource Summary</h5>
@@ -286,10 +346,8 @@ export function ResourceAllocationPlanner({
               <span className="ml-2 font-medium">{desiredDurationMonths} months</span>
             </div>
             <div>
-              <span className="text-muted-foreground">Hardware Items:</span>
-              <span className="ml-2 font-medium">
-                {Object.values(hardware).filter(Boolean).length} selected
-              </span>
+              <span className="text-muted-foreground">Infrastructure/mo:</span>
+              <span className="ml-2 font-medium">{formatCurrency(hardwareCosts.totalMonthly)}</span>
             </div>
             <div>
               <span className="text-muted-foreground">Hours/FTE/Month:</span>
