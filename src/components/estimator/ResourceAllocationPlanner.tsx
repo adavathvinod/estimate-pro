@@ -184,24 +184,24 @@ export function ResourceAllocationPlanner({
           </div>
           
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
-            <div className="p-4 bg-blue-500/10 rounded-lg text-center border border-blue-500/20">
-              <div className="text-2xl font-bold text-blue-600">{staffing.total > 0 ? staffing.frontend : '--'}</div>
+            <div className={`p-4 bg-blue-500/10 rounded-lg text-center border border-blue-500/20 transition-all duration-500 ${staffing.total > 0 ? 'animate-fade-in' : ''}`}>
+              <div className="text-2xl font-bold text-blue-600 tabular-nums">{staffing.total > 0 ? staffing.frontend : '--'}</div>
               <div className="text-sm text-muted-foreground">Frontend Devs</div>
             </div>
-            <div className="p-4 bg-green-500/10 rounded-lg text-center border border-green-500/20">
-              <div className="text-2xl font-bold text-green-600">{staffing.total > 0 ? staffing.backend : '--'}</div>
+            <div className={`p-4 bg-green-500/10 rounded-lg text-center border border-green-500/20 transition-all duration-500 ${staffing.total > 0 ? 'animate-fade-in' : ''}`} style={{ animationDelay: '50ms' }}>
+              <div className="text-2xl font-bold text-green-600 tabular-nums">{staffing.total > 0 ? staffing.backend : '--'}</div>
               <div className="text-sm text-muted-foreground">Backend Devs</div>
             </div>
-            <div className="p-4 bg-purple-500/10 rounded-lg text-center border border-purple-500/20">
-              <div className="text-2xl font-bold text-purple-600">{staffing.total > 0 ? staffing.qa : '--'}</div>
+            <div className={`p-4 bg-purple-500/10 rounded-lg text-center border border-purple-500/20 transition-all duration-500 ${staffing.total > 0 ? 'animate-fade-in' : ''}`} style={{ animationDelay: '100ms' }}>
+              <div className="text-2xl font-bold text-purple-600 tabular-nums">{staffing.total > 0 ? staffing.qa : '--'}</div>
               <div className="text-sm text-muted-foreground">QA Specialists</div>
             </div>
-            <div className="p-4 bg-orange-500/10 rounded-lg text-center border border-orange-500/20">
-              <div className="text-2xl font-bold text-orange-600">{staffing.total > 0 ? staffing.pm : '--'}</div>
+            <div className={`p-4 bg-orange-500/10 rounded-lg text-center border border-orange-500/20 transition-all duration-500 ${staffing.total > 0 ? 'animate-fade-in' : ''}`} style={{ animationDelay: '150ms' }}>
+              <div className="text-2xl font-bold text-orange-600 tabular-nums">{staffing.total > 0 ? staffing.pm : '--'}</div>
               <div className="text-sm text-muted-foreground">Project Managers</div>
             </div>
-            <div className="p-4 bg-cyan-500/10 rounded-lg text-center border border-cyan-500/20">
-              <div className="text-2xl font-bold text-cyan-600">{staffing.total > 0 ? staffing.devops : '--'}</div>
+            <div className={`p-4 bg-cyan-500/10 rounded-lg text-center border border-cyan-500/20 transition-all duration-500 ${staffing.total > 0 ? 'animate-fade-in' : ''}`} style={{ animationDelay: '200ms' }}>
+              <div className="text-2xl font-bold text-cyan-600 tabular-nums">{staffing.total > 0 ? staffing.devops : '--'}</div>
               <div className="text-sm text-muted-foreground">DevOps Engineers</div>
             </div>
           </div>

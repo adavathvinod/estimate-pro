@@ -28,6 +28,7 @@ import { ScenarioAnalysis } from './ScenarioAnalysis';
 import { MilestoneTracking } from './MilestoneTracking';
 import { AnimatedCounter } from './AnimatedCounter';
 import { EstimatorLogo } from './EstimatorLogo';
+import { SelectionProgressIndicator } from './SelectionProgressIndicator';
 import { ResourceAllocation } from '@/types/estimator';
 import { ProjectFormData, defaultFormData, ProjectEstimate, CustomItem, EXPERIENCE_LEVELS, hasMinimumSelections } from '@/types/estimator';
 import { calculateEstimate, formatCurrency, formatDuration } from '@/lib/estimationEngine';
@@ -362,16 +363,19 @@ export function EstimatorForm() {
 
           {/* User Guidance Alert */}
           {!canCalculate && (
-            <Alert className="mb-6 border-primary/20 bg-primary/5">
-              <Info className="h-4 w-4 text-primary" />
-              <AlertDescription className="text-sm">
-                <strong>Please select your project requirements to begin estimation.</strong>
-                <br />
-                <span className="text-muted-foreground">
-                  At minimum, select a project type, project stage, platform, and complexity level.
-                </span>
-              </AlertDescription>
-            </Alert>
+            <div className="mb-6 space-y-4">
+              <Alert className="border-primary/20 bg-primary/5">
+                <Info className="h-4 w-4 text-primary" />
+                <AlertDescription className="text-sm">
+                  <strong>Please select your project requirements to begin estimation.</strong>
+                  <br />
+                  <span className="text-muted-foreground">
+                    At minimum, select a project type, project stage, platform, and complexity level.
+                  </span>
+                </AlertDescription>
+              </Alert>
+              <SelectionProgressIndicator formData={formData} />
+            </div>
           )}
 
           {/* Form Sections */}
