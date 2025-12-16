@@ -178,31 +178,42 @@ export const EXPERIENCE_LEVELS: { value: ExperienceLevel; label: string; years: 
   { value: 'architect', label: 'Architect', years: '12+ years', multiplier: 0.85 },
 ];
 
+// Blank initial state - NO pre-selected options
 export const defaultFormData: ProjectFormData = {
   projectName: '',
-  projectType: 'web-app',
-  projectStage: 'pre-idea',
-  platforms: ['web'],
-  complexity: 'medium',
-  teamExperience: 'mid',
-  yearsOfExperience: 3,
+  projectType: '' as ProjectType, // Blank - user must select
+  projectStage: '' as ProjectStage, // Blank - user must select
+  platforms: [], // Empty - user must select
+  complexity: '' as ComplexityLevel, // Blank - user must select
+  teamExperience: '' as ExperienceLevel, // Blank - user must select
+  yearsOfExperience: 0,
   technologies: [],
-  pmInvolvement: 20,
-  uniqueScreens: 10,
+  pmInvolvement: 0,
+  uniqueScreens: 0,
   customBranding: false,
-  animationLevel: 'simple',
-  apiIntegrations: 3,
-  businessLogicComplexity: 'medium',
-  securityLevel: 'standard',
-  databaseSize: 'medium',
-  testCoverage: 'integration',
-  uatDays: 5,
-  cloudProvider: 'aws',
-  cicdSetup: true,
-  supportDays: 30,
+  animationLevel: '' as 'none' | 'simple' | 'advanced', // Blank
+  apiIntegrations: 0,
+  businessLogicComplexity: '' as ComplexityLevel, // Blank
+  securityLevel: '' as 'basic' | 'standard' | 'enterprise', // Blank
+  databaseSize: '' as 'small' | 'medium' | 'enterprise', // Blank
+  testCoverage: '' as 'unit' | 'integration' | 'e2e', // Blank
+  uatDays: 0,
+  cloudProvider: '' as 'aws' | 'azure' | 'gcp', // Blank
+  cicdSetup: false,
+  supportDays: 0,
   customItems: [],
   uploadedDocuments: [],
   voiceDescription: '',
+};
+
+// Check if minimum required fields are selected
+export const hasMinimumSelections = (formData: ProjectFormData): boolean => {
+  return !!(
+    formData.projectType &&
+    formData.projectStage &&
+    formData.platforms.length > 0 &&
+    formData.complexity
+  );
 };
 
 export const HOURLY_RATES = {
