@@ -63,6 +63,14 @@ export function ResourceAllocationPlanner({
     return value;
   };
 
+  // Helper to find hours by stage name (handles various naming conventions)
+  const getStageHours = (stages: Array<{ stage: string; hours: number }>, ...keywords: string[]): number => {
+    const stage = stages.find(s => 
+      keywords.some(keyword => s.stage.toLowerCase().includes(keyword.toLowerCase()))
+    );
+    return stage?.hours || 0;
+  };
+
   // Calculate FTE staffing based on desired duration
   const staffing = useMemo(() => {
     // Guard against invalid inputs
@@ -72,13 +80,13 @@ export function ResourceAllocationPlanner({
 
     const totalFteNeeded = safeNumber(totalHours / (desiredDurationMonths * HOURS_PER_FTE_PER_MONTH), 0);
     
-    // Get hours by stage category
-    const frontendHours = stages.find(s => s.stage === 'frontend')?.hours || 0;
-    const backendHours = stages.find(s => s.stage === 'backend')?.hours || 0;
-    const qaHours = stages.find(s => s.stage === 'qa')?.hours || 0;
-    const pmHours = stages.find(s => s.stage === 'pm')?.hours || 0;
-    const devopsHours = stages.find(s => s.stage === 'devops')?.hours || 0;
-    const designHours = stages.find(s => s.stage === 'design')?.hours || 0;
+    // Get hours by stage category - handles full names like "Frontend Development" or short names like "frontend"
+    const frontendHours = getStageHours(stages, 'frontend');
+    const backendHours = getStageHours(stages, 'backend');
+    const qaHours = getStageHours(stages, 'qa', 'quality', 'testing');
+    const pmHours = getStageHours(stages, 'pm', 'project management', 'management');
+    const devopsHours = getStageHours(stages, 'devops', 'deploy', 'deployment', 'support');
+    const designHours = getStageHours(stages, 'design', 'ux', 'ui');
     
     const totalStageHours = frontendHours + backendHours + qaHours + pmHours + devopsHours + designHours;
     
