@@ -112,6 +112,8 @@ export interface DocumentAnalysis {
   estimatedWeeks: number;
   estimatedHours: number;
   estimatedCost: number;
+  confidenceScore: number;
+  confidenceReason: string;
   breakdown?: {
     pm: number;
     design: number;
@@ -120,6 +122,11 @@ export interface DocumentAnalysis {
     qa: number;
     devops: number;
   };
+  technicalRequirements?: string[];
+  risks?: string[];
+  assumptions?: string[];
+  analyzedAt?: string;
+  documentId?: string;
 }
 
 // Available technologies
