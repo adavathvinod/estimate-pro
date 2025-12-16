@@ -1,8 +1,9 @@
 import { useState, useMemo, useEffect, useRef } from 'react';
-import { Gauge, Clock, DollarSign, Download, Save, History, GitCompare, ChevronUp, Loader2, Plus, FileText, BarChart3, Sparkles, FileSpreadsheet, TrendingUp } from 'lucide-react';
+import { Clock, DollarSign, Download, Save, History, GitCompare, ChevronUp, Loader2, Plus, FileText, BarChart3, Sparkles, FileSpreadsheet, TrendingUp, Info } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { ProjectInfoSection } from './sections/ProjectInfoSection';
 import { ExperienceSection } from './sections/ExperienceSection';
 import { TechnologySection } from './sections/TechnologySection';
@@ -25,8 +26,10 @@ import { TeamSkillMatrix } from './TeamSkillMatrix';
 import { BudgetForecast } from './BudgetForecast';
 import { ScenarioAnalysis } from './ScenarioAnalysis';
 import { MilestoneTracking } from './MilestoneTracking';
+import { AnimatedCounter } from './AnimatedCounter';
+import { EstimatorLogo } from './EstimatorLogo';
 import { ResourceAllocation } from '@/types/estimator';
-import { ProjectFormData, defaultFormData, ProjectEstimate, CustomItem, EXPERIENCE_LEVELS } from '@/types/estimator';
+import { ProjectFormData, defaultFormData, ProjectEstimate, CustomItem, EXPERIENCE_LEVELS, hasMinimumSelections } from '@/types/estimator';
 import { calculateEstimate, formatCurrency, formatDuration } from '@/lib/estimationEngine';
 import { generatePDFReport } from '@/lib/pdfExport';
 import { generateCSVReport, generateExcelReport } from '@/lib/csvExport';
@@ -59,8 +62,26 @@ export function EstimatorForm() {
     setFormData((prev) => ({ ...prev, customItems }));
   };
 
-  // Calculate estimate with experience multiplier
+  // Check if minimum selections have been made
+  const canCalculate = useMemo(() => hasMinimumSelections(formData), [formData]);
+
+  // Calculate estimate with experience multiplier (only if minimum selections made)
   const liveEstimate = useMemo(() => {
+    if (!canCalculate) {
+      return {
+        id: '',
+        projectName: '',
+        projectType: 'web-app' as const,
+        platform: 'web' as const,
+        complexity: 'medium' as const,
+        stages: [],
+        totalHours: 0,
+        totalWeeks: 0,
+        totalCost: 0,
+        createdAt: new Date(),
+      };
+    }
+    
     const baseEstimate = calculateEstimate(formData);
     const experienceLevel = EXPERIENCE_LEVELS.find(e => e.value === formData.teamExperience);
     const multiplier = experienceLevel?.multiplier || 1;
@@ -77,7 +98,7 @@ export function EstimatorForm() {
       technologies: formData.technologies,
       resourceAllocation: resourceAllocation || undefined,
     };
-  }, [formData, resourceAllocation]);
+  }, [formData, resourceAllocation, canCalculate]);
 
   useEffect(() => {
     loadEstimates().then(setHistoricalEstimates);
@@ -190,7 +211,7 @@ export function EstimatorForm() {
             <Tabs value={activeTab} onValueChange={(v: any) => setActiveTab(v)}>
               <TabsList className="h-9">
                 <TabsTrigger value="estimator" className="flex items-center gap-1">
-                  <Gauge className="w-4 h-4" />
+                  <EstimatorLogo size="sm" animated={false} />
                   <span className="hidden sm:inline">Estimator</span>
                 </TabsTrigger>
                 <TabsTrigger value="analytics" className="flex items-center gap-1">
@@ -217,14 +238,35 @@ export function EstimatorForm() {
                 <div className="flex items-center gap-4 text-sm">
                   <div className="text-center">
                     <div className="font-bold text-primary">
-                      {showEstimate ? formatDuration(liveEstimate.totalWeeks) : '4 months 2 weeks'}
+                      {!canCalculate ? (
+                        <span className="text-muted-foreground text-xs">Awaiting Selections</span>
+                      ) : showEstimate ? (
+                        <AnimatedCounter 
+                          value={liveEstimate.totalWeeks} 
+                          formatFn={(v) => formatDuration(v)} 
+                          duration={800}
+                        />
+                      ) : (
+                        <span className="text-muted-foreground text-xs">Ready</span>
+                      )}
                     </div>
                     <div className="text-xs text-muted-foreground hidden sm:block">Time</div>
                   </div>
                   <div className="h-8 w-px bg-border hidden sm:block" />
                   <div className="text-center hidden sm:block">
                     <div className="font-bold">
-                      {showEstimate ? formatCurrency(liveEstimate.totalCost) : '$61,776'}
+                      {!canCalculate ? (
+                        <span className="text-muted-foreground text-xs">—</span>
+                      ) : showEstimate ? (
+                        <AnimatedCounter 
+                          value={liveEstimate.totalCost} 
+                          prefix="$"
+                          formatFn={(v) => v.toLocaleString()}
+                          duration={800}
+                        />
+                      ) : (
+                        <span className="text-muted-foreground text-xs">—</span>
+                      )}
                     </div>
                     <div className="text-xs text-muted-foreground">Cost</div>
                   </div>
@@ -314,6 +356,20 @@ export function EstimatorForm() {
             )}
           </div>
 
+          {/* User Guidance Alert */}
+          {!canCalculate && (
+            <Alert className="mb-6 border-primary/20 bg-primary/5">
+              <Info className="h-4 w-4 text-primary" />
+              <AlertDescription className="text-sm">
+                <strong>Please select your project requirements to begin estimation.</strong>
+                <br />
+                <span className="text-muted-foreground">
+                  At minimum, select a project type, project stage, platform, and complexity level.
+                </span>
+              </AlertDescription>
+            </Alert>
+          )}
+
           {/* Form Sections */}
           <div className="space-y-8">
             <div>
@@ -370,6 +426,7 @@ export function EstimatorForm() {
           size="lg" 
           onClick={handleGenerateEstimate}
           className="px-8"
+          disabled={!canCalculate}
         >
           <FileText className="w-5 h-5 mr-2" />
           Generate Estimate
@@ -377,31 +434,55 @@ export function EstimatorForm() {
       </div>
 
       {/* Summary Section */}
-      {showEstimate && (
+      {showEstimate && canCalculate && (
         <div ref={summaryRef} className="mt-12 space-y-6">
           <div className="p-6 border-2 border-primary rounded-xl bg-card">
             <h2 className="text-2xl font-bold mb-6 flex items-center gap-2">
-              <Gauge className="w-6 h-6 text-primary" />
+              <EstimatorLogo size="md" animated={false} />
               Final Estimate
             </h2>
 
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
               <div className="p-4 bg-muted rounded-lg text-center">
                 <Clock className="w-6 h-6 mx-auto mb-2 text-primary" />
-                <div className="text-2xl font-bold">{formatDuration(liveEstimate.totalWeeks)}</div>
+                <div className="text-2xl font-bold">
+                  <AnimatedCounter 
+                    value={liveEstimate.totalWeeks} 
+                    formatFn={(v) => formatDuration(v)} 
+                    duration={1000}
+                  />
+                </div>
                 <div className="text-sm text-muted-foreground">Duration</div>
               </div>
               <div className="p-4 bg-muted rounded-lg text-center">
                 <DollarSign className="w-6 h-6 mx-auto mb-2 text-primary" />
-                <div className="text-2xl font-bold">{formatCurrency(liveEstimate.totalCost)}</div>
+                <div className="text-2xl font-bold">
+                  <AnimatedCounter 
+                    value={liveEstimate.totalCost} 
+                    prefix="$"
+                    formatFn={(v) => v.toLocaleString()}
+                    duration={1000}
+                  />
+                </div>
                 <div className="text-sm text-muted-foreground">Total Cost</div>
               </div>
               <div className="p-4 bg-muted rounded-lg text-center">
-                <div className="text-2xl font-bold">{liveEstimate.totalHours}</div>
+                <div className="text-2xl font-bold">
+                  <AnimatedCounter 
+                    value={liveEstimate.totalHours} 
+                    formatFn={(v) => v.toLocaleString()}
+                    duration={1000}
+                  />
+                </div>
                 <div className="text-sm text-muted-foreground">Total Hours</div>
               </div>
               <div className="p-4 bg-muted rounded-lg text-center">
-                <div className="text-2xl font-bold">{liveEstimate.stages.length}</div>
+                <div className="text-2xl font-bold">
+                  <AnimatedCounter 
+                    value={liveEstimate.stages.length} 
+                    duration={500}
+                  />
+                </div>
                 <div className="text-sm text-muted-foreground">Stages</div>
               </div>
             </div>
