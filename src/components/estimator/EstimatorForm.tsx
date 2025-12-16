@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect, useRef } from 'react';
-import { Calculator, Clock, DollarSign, Download, Save, History, GitCompare, ChevronUp, Loader2, Plus, FileText, BarChart3, Sparkles, FileSpreadsheet, TrendingUp } from 'lucide-react';
+import { Gauge, Clock, DollarSign, Download, Save, History, GitCompare, ChevronUp, Loader2, Plus, FileText, BarChart3, Sparkles, FileSpreadsheet, TrendingUp } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
@@ -190,7 +190,7 @@ export function EstimatorForm() {
             <Tabs value={activeTab} onValueChange={(v: any) => setActiveTab(v)}>
               <TabsList className="h-9">
                 <TabsTrigger value="estimator" className="flex items-center gap-1">
-                  <Calculator className="w-4 h-4" />
+                  <Gauge className="w-4 h-4" />
                   <span className="hidden sm:inline">Estimator</span>
                 </TabsTrigger>
                 <TabsTrigger value="analytics" className="flex items-center gap-1">
@@ -216,12 +216,16 @@ export function EstimatorForm() {
               <>
                 <div className="flex items-center gap-4 text-sm">
                   <div className="text-center">
-                    <div className="font-bold text-primary">{formatDuration(liveEstimate.totalWeeks)}</div>
+                    <div className="font-bold text-primary">
+                      {showEstimate ? formatDuration(liveEstimate.totalWeeks) : '4 months 2 weeks'}
+                    </div>
                     <div className="text-xs text-muted-foreground hidden sm:block">Time</div>
                   </div>
                   <div className="h-8 w-px bg-border hidden sm:block" />
                   <div className="text-center hidden sm:block">
-                    <div className="font-bold">{formatCurrency(liveEstimate.totalCost)}</div>
+                    <div className="font-bold">
+                      {showEstimate ? formatCurrency(liveEstimate.totalCost) : '$61,776'}
+                    </div>
                     <div className="text-xs text-muted-foreground">Cost</div>
                   </div>
                 </div>
@@ -377,7 +381,7 @@ export function EstimatorForm() {
         <div ref={summaryRef} className="mt-12 space-y-6">
           <div className="p-6 border-2 border-primary rounded-xl bg-card">
             <h2 className="text-2xl font-bold mb-6 flex items-center gap-2">
-              <Calculator className="w-6 h-6 text-primary" />
+              <Gauge className="w-6 h-6 text-primary" />
               Final Estimate
             </h2>
 
