@@ -137,6 +137,10 @@ export function EstimatorForm() {
   };
 
   const handleGenerateEstimate = () => {
+    if (!canCalculate) {
+      toast.error('Please select features and inputs across all required stages before generating an estimate.');
+      return;
+    }
     if (!formData.projectName.trim()) {
       toast.error('Please enter a project name');
       return;
@@ -490,15 +494,19 @@ export function EstimatorForm() {
             {/* Stage Breakdown */}
             <div className="space-y-3 mb-6">
               <h4 className="font-semibold">Stage Breakdown</h4>
-              {liveEstimate.stages.map((stage, index) => (
-                <div key={index} className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
-                  <span className="font-medium capitalize">{stage.stage}</span>
-                  <div className="flex items-center gap-4 text-sm">
-                    <span>{stage.hours}h</span>
-                    <span className="text-muted-foreground">{formatCurrency(stage.cost)}</span>
+              {liveEstimate.stages.map((stage, index) => {
+                const safeHours = typeof stage.hours === 'number' && !isNaN(stage.hours) ? stage.hours : 0;
+                const safeCost = typeof stage.cost === 'number' && !isNaN(stage.cost) ? stage.cost : 0;
+                return (
+                  <div key={index} className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
+                    <span className="font-medium capitalize">{stage.stage}</span>
+                    <div className="flex items-center gap-4 text-sm">
+                      <span>{safeHours > 0 ? `${safeHours}h` : '--'}</span>
+                      <span className="text-muted-foreground">{safeCost > 0 ? formatCurrency(safeCost) : '--'}</span>
+                    </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
 
             {/* Actions */}
