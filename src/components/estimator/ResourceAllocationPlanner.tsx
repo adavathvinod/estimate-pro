@@ -183,33 +183,43 @@ export function ResourceAllocationPlanner({
             <h4 className="font-semibold">Required FTE Staffing</h4>
           </div>
           
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
-            <div className={`p-4 bg-blue-500/10 rounded-lg text-center border border-blue-500/20 transition-all duration-500 ${staffing.total > 0 ? 'animate-fade-in' : ''}`}>
-              <div className="text-2xl font-bold text-blue-600 tabular-nums">{staffing.total > 0 ? staffing.frontend : '--'}</div>
-              <div className="text-sm text-muted-foreground">Frontend Devs</div>
-            </div>
-            <div className={`p-4 bg-green-500/10 rounded-lg text-center border border-green-500/20 transition-all duration-500 ${staffing.total > 0 ? 'animate-fade-in' : ''}`} style={{ animationDelay: '50ms' }}>
-              <div className="text-2xl font-bold text-green-600 tabular-nums">{staffing.total > 0 ? staffing.backend : '--'}</div>
-              <div className="text-sm text-muted-foreground">Backend Devs</div>
-            </div>
-            <div className={`p-4 bg-purple-500/10 rounded-lg text-center border border-purple-500/20 transition-all duration-500 ${staffing.total > 0 ? 'animate-fade-in' : ''}`} style={{ animationDelay: '100ms' }}>
-              <div className="text-2xl font-bold text-purple-600 tabular-nums">{staffing.total > 0 ? staffing.qa : '--'}</div>
-              <div className="text-sm text-muted-foreground">QA Specialists</div>
-            </div>
-            <div className={`p-4 bg-orange-500/10 rounded-lg text-center border border-orange-500/20 transition-all duration-500 ${staffing.total > 0 ? 'animate-fade-in' : ''}`} style={{ animationDelay: '150ms' }}>
-              <div className="text-2xl font-bold text-orange-600 tabular-nums">{staffing.total > 0 ? staffing.pm : '--'}</div>
-              <div className="text-sm text-muted-foreground">Project Managers</div>
-            </div>
-            <div className={`p-4 bg-cyan-500/10 rounded-lg text-center border border-cyan-500/20 transition-all duration-500 ${staffing.total > 0 ? 'animate-fade-in' : ''}`} style={{ animationDelay: '200ms' }}>
-              <div className="text-2xl font-bold text-cyan-600 tabular-nums">{staffing.total > 0 ? staffing.devops : '--'}</div>
-              <div className="text-sm text-muted-foreground">DevOps Engineers</div>
-            </div>
-          </div>
+          {totalHours > 0 && staffing.total > 0 ? (
+            <>
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
+                <div className="p-4 bg-blue-500/10 rounded-lg text-center border border-blue-500/20 animate-fade-in">
+                  <div className="text-2xl font-bold text-blue-600 tabular-nums">{staffing.frontend}</div>
+                  <div className="text-sm text-muted-foreground">Frontend Devs</div>
+                </div>
+                <div className="p-4 bg-green-500/10 rounded-lg text-center border border-green-500/20 animate-fade-in" style={{ animationDelay: '50ms' }}>
+                  <div className="text-2xl font-bold text-green-600 tabular-nums">{staffing.backend}</div>
+                  <div className="text-sm text-muted-foreground">Backend Devs</div>
+                </div>
+                <div className="p-4 bg-purple-500/10 rounded-lg text-center border border-purple-500/20 animate-fade-in" style={{ animationDelay: '100ms' }}>
+                  <div className="text-2xl font-bold text-purple-600 tabular-nums">{staffing.qa}</div>
+                  <div className="text-sm text-muted-foreground">QA Specialists</div>
+                </div>
+                <div className="p-4 bg-orange-500/10 rounded-lg text-center border border-orange-500/20 animate-fade-in" style={{ animationDelay: '150ms' }}>
+                  <div className="text-2xl font-bold text-orange-600 tabular-nums">{staffing.pm}</div>
+                  <div className="text-sm text-muted-foreground">Project Managers</div>
+                </div>
+                <div className="p-4 bg-cyan-500/10 rounded-lg text-center border border-cyan-500/20 animate-fade-in" style={{ animationDelay: '200ms' }}>
+                  <div className="text-2xl font-bold text-cyan-600 tabular-nums">{staffing.devops}</div>
+                  <div className="text-sm text-muted-foreground">DevOps Engineers</div>
+                </div>
+              </div>
 
-          <div className="p-4 bg-muted rounded-lg flex items-center justify-between">
-            <span className="font-medium">Total Team Size</span>
-            <span className="text-2xl font-bold text-primary">{staffing.total > 0 ? `${staffing.total} FTE` : '--'}</span>
-          </div>
+              <div className="p-4 bg-muted rounded-lg flex items-center justify-between animate-fade-in" style={{ animationDelay: '250ms' }}>
+                <span className="font-medium">Total Team Size</span>
+                <span className="text-2xl font-bold text-primary">{staffing.total} FTE</span>
+              </div>
+            </>
+          ) : (
+            <div className="p-6 bg-muted/50 rounded-lg text-center border border-dashed border-muted-foreground/30">
+              <Users className="w-10 h-10 mx-auto text-muted-foreground/50 mb-3" />
+              <p className="text-muted-foreground font-medium">Generate an estimate to see FTE staffing requirements</p>
+              <p className="text-sm text-muted-foreground/70 mt-1">Complete the required fields above and click "Generate Estimate"</p>
+            </div>
+          )}
 
           <p className="text-sm text-muted-foreground">
             Formula: T = H<sub>total</sub> / (Duration × {HOURS_PER_FTE_PER_MONTH} hrs/month)
