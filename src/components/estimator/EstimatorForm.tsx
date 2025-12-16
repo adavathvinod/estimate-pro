@@ -12,6 +12,7 @@ import { ComparisonView } from './ComparisonView';
 import { ShareEstimateDialog } from './ShareEstimateDialog';
 import { CommentsSection } from './CommentsSection';
 import { SprintBreakdown } from './SprintBreakdown';
+import { HistoricalMatchPanel } from './HistoricalMatchPanel';
 import { ProjectFormData, defaultFormData, ProjectEstimate, CustomItem, EXPERIENCE_LEVELS } from '@/types/estimator';
 import { calculateEstimate, formatCurrency, formatDuration } from '@/lib/estimationEngine';
 import { generatePDFReport } from '@/lib/pdfExport';
@@ -359,6 +360,17 @@ export function EstimatorForm() {
 
           {/* Sprint Breakdown */}
           <SprintBreakdown stages={liveEstimate.stages} totalWeeks={liveEstimate.totalWeeks} />
+
+          {/* Historical Match Panel */}
+          <HistoricalMatchPanel
+            projectType={formData.projectType}
+            platform={formData.platforms[0] || 'web'}
+            complexity={formData.complexity}
+            currentHours={liveEstimate.totalHours}
+            onApplyAdjustment={(adjustedHours) => {
+              toast.info(`Historical data suggests ${adjustedHours} hours - consider adjusting your estimate`);
+            }}
+          />
         </div>
       )}
 
