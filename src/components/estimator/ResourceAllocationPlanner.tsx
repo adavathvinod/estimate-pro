@@ -55,9 +55,22 @@ export function ResourceAllocationPlanner({
     }));
   }, [platforms]);
 
+  // Safe number helper to prevent NaN
+  const safeNumber = (value: number, fallback: number = 0): number => {
+    if (typeof value !== 'number' || isNaN(value) || !isFinite(value)) {
+      return fallback;
+    }
+    return value;
+  };
+
   // Calculate FTE staffing based on desired duration
   const staffing = useMemo(() => {
-    const totalFteNeeded = totalHours / (desiredDurationMonths * HOURS_PER_FTE_PER_MONTH);
+    // Guard against invalid inputs
+    if (!totalHours || totalHours <= 0 || !stages || stages.length === 0) {
+      return { frontend: 0, backend: 0, qa: 0, pm: 0, devops: 0, total: 0 };
+    }
+
+    const totalFteNeeded = safeNumber(totalHours / (desiredDurationMonths * HOURS_PER_FTE_PER_MONTH), 0);
     
     // Get hours by stage category
     const frontendHours = stages.find(s => s.stage === 'frontend')?.hours || 0;
@@ -69,12 +82,17 @@ export function ResourceAllocationPlanner({
     
     const totalStageHours = frontendHours + backendHours + qaHours + pmHours + devopsHours + designHours;
     
+    // If no stage hours, return zeros to prevent NaN
+    if (totalStageHours <= 0 || totalFteNeeded <= 0) {
+      return { frontend: 0, backend: 0, qa: 0, pm: 0, devops: 0, total: 0 };
+    }
+    
     // Calculate proportional FTE for each role
-    const frontend = Math.max(1, Math.ceil((frontendHours + designHours) / totalStageHours * totalFteNeeded));
-    const backend = Math.max(1, Math.ceil(backendHours / totalStageHours * totalFteNeeded));
-    const qa = Math.max(1, Math.ceil(qaHours / totalStageHours * totalFteNeeded));
-    const pm = Math.max(1, Math.ceil(pmHours / totalStageHours * totalFteNeeded));
-    const devops = Math.max(1, Math.ceil(devopsHours / totalStageHours * totalFteNeeded));
+    const frontend = safeNumber(Math.max(1, Math.ceil((frontendHours + designHours) / totalStageHours * totalFteNeeded)), 0);
+    const backend = safeNumber(Math.max(1, Math.ceil(backendHours / totalStageHours * totalFteNeeded)), 0);
+    const qa = safeNumber(Math.max(1, Math.ceil(qaHours / totalStageHours * totalFteNeeded)), 0);
+    const pm = safeNumber(Math.max(1, Math.ceil(pmHours / totalStageHours * totalFteNeeded)), 0);
+    const devops = safeNumber(Math.max(1, Math.ceil(devopsHours / totalStageHours * totalFteNeeded)), 0);
 
     return {
       frontend,
@@ -167,30 +185,30 @@ export function ResourceAllocationPlanner({
           
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
             <div className="p-4 bg-blue-500/10 rounded-lg text-center border border-blue-500/20">
-              <div className="text-2xl font-bold text-blue-600">{staffing.frontend}</div>
+              <div className="text-2xl font-bold text-blue-600">{staffing.total > 0 ? staffing.frontend : '--'}</div>
               <div className="text-sm text-muted-foreground">Frontend Devs</div>
             </div>
             <div className="p-4 bg-green-500/10 rounded-lg text-center border border-green-500/20">
-              <div className="text-2xl font-bold text-green-600">{staffing.backend}</div>
+              <div className="text-2xl font-bold text-green-600">{staffing.total > 0 ? staffing.backend : '--'}</div>
               <div className="text-sm text-muted-foreground">Backend Devs</div>
             </div>
             <div className="p-4 bg-purple-500/10 rounded-lg text-center border border-purple-500/20">
-              <div className="text-2xl font-bold text-purple-600">{staffing.qa}</div>
+              <div className="text-2xl font-bold text-purple-600">{staffing.total > 0 ? staffing.qa : '--'}</div>
               <div className="text-sm text-muted-foreground">QA Specialists</div>
             </div>
             <div className="p-4 bg-orange-500/10 rounded-lg text-center border border-orange-500/20">
-              <div className="text-2xl font-bold text-orange-600">{staffing.pm}</div>
+              <div className="text-2xl font-bold text-orange-600">{staffing.total > 0 ? staffing.pm : '--'}</div>
               <div className="text-sm text-muted-foreground">Project Managers</div>
             </div>
             <div className="p-4 bg-cyan-500/10 rounded-lg text-center border border-cyan-500/20">
-              <div className="text-2xl font-bold text-cyan-600">{staffing.devops}</div>
+              <div className="text-2xl font-bold text-cyan-600">{staffing.total > 0 ? staffing.devops : '--'}</div>
               <div className="text-sm text-muted-foreground">DevOps Engineers</div>
             </div>
           </div>
 
           <div className="p-4 bg-muted rounded-lg flex items-center justify-between">
             <span className="font-medium">Total Team Size</span>
-            <span className="text-2xl font-bold text-primary">{staffing.total} FTE</span>
+            <span className="text-2xl font-bold text-primary">{staffing.total > 0 ? `${staffing.total} FTE` : '--'}</span>
           </div>
 
           <p className="text-sm text-muted-foreground">
@@ -339,7 +357,7 @@ export function ResourceAllocationPlanner({
           <div className="grid grid-cols-2 gap-4 text-sm">
             <div>
               <span className="text-muted-foreground">Team Size:</span>
-              <span className="ml-2 font-medium">{staffing.total} FTE</span>
+              <span className="ml-2 font-medium">{staffing.total > 0 ? `${staffing.total} FTE` : '--'}</span>
             </div>
             <div>
               <span className="text-muted-foreground">Duration:</span>
