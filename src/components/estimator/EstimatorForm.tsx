@@ -1,6 +1,7 @@
 import { useState, useMemo, useEffect, useRef } from 'react';
-import { Calculator, Clock, DollarSign, Download, Save, History, GitCompare, ChevronUp, Loader2, Users, Plus, FileText } from 'lucide-react';
+import { Calculator, Clock, DollarSign, Download, Save, History, GitCompare, ChevronUp, Loader2, Plus, FileText, BarChart3, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ProjectInfoSection } from './sections/ProjectInfoSection';
 import { ExperienceSection } from './sections/ExperienceSection';
 import { TechnologySection } from './sections/TechnologySection';
@@ -13,11 +14,15 @@ import { ShareEstimateDialog } from './ShareEstimateDialog';
 import { CommentsSection } from './CommentsSection';
 import { SprintBreakdown } from './SprintBreakdown';
 import { HistoricalMatchPanel } from './HistoricalMatchPanel';
+import { RealtimePresence } from './RealtimePresence';
+import { IndustryTemplateSelector } from './IndustryTemplateSelector';
+import { AnalyticsDashboard } from './AnalyticsDashboard';
 import { ProjectFormData, defaultFormData, ProjectEstimate, CustomItem, EXPERIENCE_LEVELS } from '@/types/estimator';
 import { calculateEstimate, formatCurrency, formatDuration } from '@/lib/estimationEngine';
 import { generatePDFReport } from '@/lib/pdfExport';
 import { useEstimateStorage } from '@/hooks/useEstimateStorage';
 import { toast } from 'sonner';
+import { IndustryTemplate } from '@/lib/industryTemplates';
 
 export function EstimatorForm() {
   const [formData, setFormData] = useState<ProjectFormData>(defaultFormData);
@@ -27,7 +32,8 @@ export function EstimatorForm() {
   const [selectedForCompare, setSelectedForCompare] = useState<string[]>([]);
   const [showScrollTop, setShowScrollTop] = useState(false);
   const [generating, setGenerating] = useState(false);
-  const [activeViewers, setActiveViewers] = useState(0);
+  const [activeTab, setActiveTab] = useState<'estimator' | 'analytics'>('estimator');
+  const [appliedTemplate, setAppliedTemplate] = useState<IndustryTemplate | null>(null);
   
   const [showEstimate, setShowEstimate] = useState(false);
   
@@ -73,11 +79,11 @@ export function EstimatorForm() {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  // Simulate active viewers (in real app, use Supabase Realtime presence)
-  useEffect(() => {
-    const randomViewers = Math.floor(Math.random() * 3);
-    setActiveViewers(randomViewers);
-  }, []);
+  const handleApplyTemplate = (updates: Partial<ProjectFormData>, template: IndustryTemplate) => {
+    setFormData(prev => ({ ...prev, ...updates }));
+    setAppliedTemplate(template);
+    toast.success(`Applied "${template.name}" template`);
+  };
 
   const handleSaveEstimate = async () => {
     if (!formData.projectName.trim()) {
@@ -141,47 +147,61 @@ export function EstimatorForm() {
       <div className="sticky top-0 z-50 bg-background/95 backdrop-blur border-b -mx-4 px-4 py-3 mb-6">
         <div className="flex items-center justify-between gap-4">
           <div className="flex items-center gap-3">
-            <Calculator className="w-5 h-5 text-primary" />
-            <span className="font-semibold hidden sm:inline">Project Estimator</span>
-            {activeViewers > 0 && (
-              <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                <Users className="w-3 h-3" />
-                <span>{activeViewers} viewing</span>
-              </div>
-            )}
+            <Tabs value={activeTab} onValueChange={(v: any) => setActiveTab(v)}>
+              <TabsList className="h-9">
+                <TabsTrigger value="estimator" className="flex items-center gap-1">
+                  <Calculator className="w-4 h-4" />
+                  <span className="hidden sm:inline">Estimator</span>
+                </TabsTrigger>
+                <TabsTrigger value="analytics" className="flex items-center gap-1">
+                  <BarChart3 className="w-4 h-4" />
+                  <span className="hidden sm:inline">Analytics</span>
+                </TabsTrigger>
+              </TabsList>
+            </Tabs>
+            
+            {/* Real-time Presence */}
+            <RealtimePresence 
+              channelName={`estimator-${formData.projectName || 'new'}`}
+              currentSection={activeTab}
+            />
           </div>
           
           <div className="flex items-center gap-2 sm:gap-4">
-            <div className="flex items-center gap-4 text-sm">
-              <div className="text-center">
-                <div className="font-bold text-primary">{formatDuration(liveEstimate.totalWeeks)}</div>
-                <div className="text-xs text-muted-foreground hidden sm:block">Time</div>
-              </div>
-              <div className="h-8 w-px bg-border hidden sm:block" />
-              <div className="text-center hidden sm:block">
-                <div className="font-bold">{formatCurrency(liveEstimate.totalCost)}</div>
-                <div className="text-xs text-muted-foreground">Cost</div>
-              </div>
-            </div>
-            
-            <Button 
-              size="sm" 
-              onClick={handleNewEstimate}
-              variant="outline"
-            >
-              <Plus className="w-4 h-4" />
-              <span className="hidden sm:inline ml-1">New</span>
-            </Button>
-            
-            <ShareEstimateDialog 
-              estimateId={liveEstimate.id} 
-              projectName={formData.projectName || 'Untitled'} 
-            />
-            
-            <Button variant="outline" size="sm" onClick={() => setShowHistory(!showHistory)}>
-              <History className="w-4 h-4" />
-              <span className="hidden sm:inline ml-1">({historicalEstimates.length})</span>
-            </Button>
+            {activeTab === 'estimator' && (
+              <>
+                <div className="flex items-center gap-4 text-sm">
+                  <div className="text-center">
+                    <div className="font-bold text-primary">{formatDuration(liveEstimate.totalWeeks)}</div>
+                    <div className="text-xs text-muted-foreground hidden sm:block">Time</div>
+                  </div>
+                  <div className="h-8 w-px bg-border hidden sm:block" />
+                  <div className="text-center hidden sm:block">
+                    <div className="font-bold">{formatCurrency(liveEstimate.totalCost)}</div>
+                    <div className="text-xs text-muted-foreground">Cost</div>
+                  </div>
+                </div>
+                
+                <Button 
+                  size="sm" 
+                  onClick={handleNewEstimate}
+                  variant="outline"
+                >
+                  <Plus className="w-4 h-4" />
+                  <span className="hidden sm:inline ml-1">New</span>
+                </Button>
+                
+                <ShareEstimateDialog 
+                  estimateId={liveEstimate.id} 
+                  projectName={formData.projectName || 'Untitled'} 
+                />
+                
+                <Button variant="outline" size="sm" onClick={() => setShowHistory(!showHistory)}>
+                  <History className="w-4 h-4" />
+                  <span className="hidden sm:inline ml-1">({historicalEstimates.length})</span>
+                </Button>
+              </>
+            )}
           </div>
         </div>
       </div>
@@ -220,55 +240,79 @@ export function EstimatorForm() {
         </div>
       )}
 
-      {/* Form Sections */}
-      <div className="space-y-8">
-        <div>
-          <ProjectInfoSection data={formData} onChange={handleChange} />
-          <CommentsSection section="project-info" sectionLabel="Project Info" />
-        </div>
-        
-        <div className="h-px bg-border" />
-        
-        <div>
-          <ExperienceSection data={formData} onChange={handleChange} />
-          <CommentsSection section="experience" sectionLabel="Experience Level" />
-        </div>
-        
-        <div className="h-px bg-border" />
-        
-        <div>
-          <TechnologySection data={formData} onChange={handleChange} />
-          <CommentsSection section="technology" sectionLabel="Technologies" />
-        </div>
-        
-        <div className="h-px bg-border" />
-        
-        <div>
-          <PlatformSection data={formData} onChange={handleChange} />
-          <CommentsSection section="platform" sectionLabel="Platforms" />
-        </div>
-        
-        <div className="h-px bg-border" />
-        
-        <div>
-          <PMSection data={formData} onChange={handleChange} onCustomItemsChange={handleCustomItemsChange} />
-          <CommentsSection section="pm" sectionLabel="Project Management" />
-        </div>
-        
-        <div className="h-px bg-border" />
-        
-        <div>
-          <DevelopmentSection data={formData} onChange={handleChange} onCustomItemsChange={handleCustomItemsChange} />
-          <CommentsSection section="development" sectionLabel="Development" />
-        </div>
-        
-        <div className="h-px bg-border" />
-        
-        <div>
-          <QADeploySection data={formData} onChange={handleChange} onCustomItemsChange={handleCustomItemsChange} />
-          <CommentsSection section="qa-deploy" sectionLabel="QA & Deployment" />
-        </div>
-      </div>
+      {/* Tab Content */}
+      {activeTab === 'analytics' ? (
+        <AnalyticsDashboard />
+      ) : (
+        <>
+          {/* Industry Template Selector */}
+          <div className="mb-6 flex flex-wrap items-center gap-3">
+            <IndustryTemplateSelector onApplyTemplate={handleApplyTemplate} />
+            {appliedTemplate && (
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <Sparkles className="w-4 h-4 text-primary" />
+                <span>Using: <strong>{appliedTemplate.name}</strong></span>
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  className="h-6 px-2"
+                  onClick={() => setAppliedTemplate(null)}
+                >
+                  Clear
+                </Button>
+              </div>
+            )}
+          </div>
+
+          {/* Form Sections */}
+          <div className="space-y-8">
+            <div>
+              <ProjectInfoSection data={formData} onChange={handleChange} />
+              <CommentsSection section="project-info" sectionLabel="Project Info" />
+            </div>
+            
+            <div className="h-px bg-border" />
+            
+            <div>
+              <ExperienceSection data={formData} onChange={handleChange} />
+              <CommentsSection section="experience" sectionLabel="Experience Level" />
+            </div>
+            
+            <div className="h-px bg-border" />
+            
+            <div>
+              <TechnologySection data={formData} onChange={handleChange} />
+              <CommentsSection section="technology" sectionLabel="Technologies" />
+            </div>
+            
+            <div className="h-px bg-border" />
+            
+            <div>
+              <PlatformSection data={formData} onChange={handleChange} />
+              <CommentsSection section="platform" sectionLabel="Platforms" />
+            </div>
+            
+            <div className="h-px bg-border" />
+            
+            <div>
+              <PMSection data={formData} onChange={handleChange} onCustomItemsChange={handleCustomItemsChange} />
+              <CommentsSection section="pm" sectionLabel="Project Management" />
+            </div>
+            
+            <div className="h-px bg-border" />
+            
+            <div>
+              <DevelopmentSection data={formData} onChange={handleChange} onCustomItemsChange={handleCustomItemsChange} />
+              <CommentsSection section="development" sectionLabel="Development" />
+            </div>
+            
+            <div className="h-px bg-border" />
+            
+            <div>
+              <QADeploySection data={formData} onChange={handleChange} onCustomItemsChange={handleCustomItemsChange} />
+              <CommentsSection section="qa-deploy" sectionLabel="QA & Deployment" />
+            </div>
+          </div>
 
       {/* Generate Estimate Button */}
       <div className="mt-8 flex justify-center">
@@ -372,6 +416,8 @@ export function EstimatorForm() {
             }}
           />
         </div>
+      )}
+        </>
       )}
 
       {/* Scroll to Top Button */}
