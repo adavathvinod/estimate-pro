@@ -1,5 +1,6 @@
-import { useState, useMemo, useEffect, useRef } from 'react';
-import { Clock, DollarSign, Download, Save, History, GitCompare, ChevronUp, Loader2, Plus, FileText, BarChart3, Sparkles, FileSpreadsheet, TrendingUp, Info } from 'lucide-react';
+import { useState, useMemo, useEffect, useRef, useCallback } from 'react';
+import { useSearchParams } from 'react-router-dom';
+import { Clock, DollarSign, Download, Save, History, GitCompare, ChevronUp, Loader2, Plus, FileText, BarChart3, Sparkles, FileSpreadsheet, TrendingUp, Info, Link2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
@@ -35,10 +36,16 @@ import { calculateEstimate, formatCurrency, formatDuration } from '@/lib/estimat
 import { generatePDFReport } from '@/lib/pdfExport';
 import { generateCSVReport, generateExcelReport } from '@/lib/csvExport';
 import { useEstimateStorage } from '@/hooks/useEstimateStorage';
+import { useRealtimeFormSync } from '@/hooks/useRealtimeFormSync';
 import { toast } from 'sonner';
 import { IndustryTemplate } from '@/lib/industryTemplates';
 
 export function EstimatorForm() {
+  const [searchParams] = useSearchParams();
+  const sessionId = searchParams.get('session') || `session-${Date.now()}`;
+  const isViewer = searchParams.get('viewer') === 'true';
+  const isHost = !isViewer;
+
   const [formData, setFormData] = useState<ProjectFormData>(defaultFormData);
   const [showHistory, setShowHistory] = useState(false);
   const [showComparison, setShowComparison] = useState(false);
@@ -55,11 +62,29 @@ export function EstimatorForm() {
   const { saveEstimate, loadEstimates, getHistoricalMatch, saving, loading } = useEstimateStorage();
   const summaryRef = useRef<HTMLDivElement>(null);
 
+  // Real-time form sync for collaboration
+  const handleRemoteUpdate = useCallback((remoteData: ProjectFormData) => {
+    setFormData(remoteData);
+    toast.info('Form updated by host', { duration: 2000 });
+  }, []);
+
+  useRealtimeFormSync({
+    channelName: sessionId,
+    formData,
+    onRemoteUpdate: handleRemoteUpdate,
+    isHost,
+  });
+
   const handleChange = (updates: Partial<ProjectFormData>) => {
+    if (isViewer) {
+      toast.error('View-only mode. Only the host can make changes.');
+      return;
+    }
     setFormData((prev) => ({ ...prev, ...updates }));
   };
 
   const handleCustomItemsChange = (customItems: CustomItem[]) => {
+    if (isViewer) return;
     setFormData((prev) => ({ ...prev, customItems }));
   };
 
