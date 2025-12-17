@@ -13,9 +13,9 @@ interface RequiredField {
 
 export function SelectionProgressIndicator({ formData }: SelectionProgressIndicatorProps) {
   const requiredFields: RequiredField[] = [
-    { key: 'projectTypes', label: 'Project Type', isSelected: formData.projectTypes?.length > 0 },
+    { key: 'projectTypes', label: 'Project Type', isSelected: (formData.projectTypes?.length ?? 0) > 0 },
     { key: 'projectStage', label: 'Project Stage', isSelected: !!formData.projectStage },
-    { key: 'platforms', label: 'Platform(s)', isSelected: formData.platforms.length > 0 },
+    { key: 'platforms', label: 'Platform(s)', isSelected: (formData.platforms?.length ?? 0) > 0 },
     { key: 'complexity', label: 'Complexity', isSelected: !!formData.complexity },
   ];
 
