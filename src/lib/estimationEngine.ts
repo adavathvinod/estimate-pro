@@ -189,7 +189,8 @@ export function calculateEstimate(data: ProjectFormData): ProjectEstimate {
   return {
     id: crypto.randomUUID(),
     projectName: data.projectName || 'Untitled Project',
-    projectType: data.projectType,
+    projectType: data.projectTypes?.[0] || 'web-app',
+    projectTypes: data.projectTypes,
     platform: platforms,
     complexity: data.complexity,
     stages,

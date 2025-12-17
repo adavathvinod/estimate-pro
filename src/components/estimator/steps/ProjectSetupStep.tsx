@@ -39,10 +39,24 @@ export function ProjectSetupStep({ data, onChange }: ProjectSetupStepProps) {
         <Input value={data.projectName} onChange={(e) => onChange({ projectName: e.target.value })} placeholder="Enter project name..." className="h-12" />
       </FormField>
 
-      <FormField label="Project Type" tooltip="Select the type of solution you're building">
+      <FormField label="Project Type" tooltip="Select one or more solution types">
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           {projectTypes.map(({ type, icon: Icon, title, description }) => (
-            <SelectionCard key={type} icon={<Icon className="w-5 h-5" />} title={title} description={description} selected={data.projectType === type} onClick={() => onChange({ projectType: type })} />
+            <SelectionCard 
+              key={type} 
+              icon={<Icon className="w-5 h-5" />} 
+              title={title} 
+              description={description} 
+              selected={data.projectTypes?.includes(type)} 
+              onClick={() => {
+                const current = data.projectTypes || [];
+                if (current.includes(type)) {
+                  onChange({ projectTypes: current.filter(t => t !== type) });
+                } else {
+                  onChange({ projectTypes: [...current, type] });
+                }
+              }} 
+            />
           ))}
         </div>
       </FormField>
@@ -65,7 +79,7 @@ export function ProjectSetupStep({ data, onChange }: ProjectSetupStepProps) {
               </div>
               <FileUpload
                 documents={data.uploadedDocuments || []}
-                projectType={data.projectType}
+                projectType={data.projectTypes?.[0] || 'web-app'}
                 onDocumentsChange={(docs) => onChange({ uploadedDocuments: docs })}
                 onAnalysisComplete={handleAnalysisComplete}
               />

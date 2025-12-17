@@ -1,4 +1,4 @@
-import { ProjectFormData, ComplexityLevel } from '@/types/estimator';
+import { ProjectFormData, ComplexityLevel, defaultTeamComposition } from '@/types/estimator';
 
 export interface IndustryTemplate {
   id: string;
@@ -24,7 +24,7 @@ export const INDUSTRY_TEMPLATES: IndustryTemplate[] = [
     description: 'Simple online store with product catalog, cart, and checkout',
     category: 'e-commerce',
     defaults: {
-      projectType: 'web-app',
+      projectTypes: ['web-app'],
       complexity: 'simple',
       uniqueScreens: 8,
       apiIntegrations: 3,
@@ -45,7 +45,7 @@ export const INDUSTRY_TEMPLATES: IndustryTemplate[] = [
     description: 'Full-featured e-commerce with inventory, analytics, and multi-vendor support',
     category: 'e-commerce',
     defaults: {
-      projectType: 'web-app',
+      projectTypes: ['web-app'],
       complexity: 'complex',
       uniqueScreens: 25,
       apiIntegrations: 8,
@@ -69,7 +69,7 @@ export const INDUSTRY_TEMPLATES: IndustryTemplate[] = [
     description: 'Mobile wallet with payments, transfers, and transaction history',
     category: 'fintech',
     defaults: {
-      projectType: 'mobile-app',
+      projectTypes: ['mobile-app'],
       complexity: 'complex',
       uniqueScreens: 15,
       apiIntegrations: 6,
@@ -91,7 +91,7 @@ export const INDUSTRY_TEMPLATES: IndustryTemplate[] = [
     description: 'Stock/crypto trading platform with real-time data and portfolio management',
     category: 'fintech',
     defaults: {
-      projectType: 'web-app',
+      projectTypes: ['web-app'],
       complexity: 'complex',
       uniqueScreens: 20,
       apiIntegrations: 10,
@@ -116,7 +116,7 @@ export const INDUSTRY_TEMPLATES: IndustryTemplate[] = [
     description: 'Video consultations with appointment booking and patient records',
     category: 'healthcare',
     defaults: {
-      projectType: 'web-app',
+      projectTypes: ['web-app'],
       complexity: 'complex',
       uniqueScreens: 18,
       apiIntegrations: 7,
@@ -138,7 +138,7 @@ export const INDUSTRY_TEMPLATES: IndustryTemplate[] = [
     description: 'Comprehensive EHR system for clinics and hospitals',
     category: 'healthcare',
     defaults: {
-      projectType: 'web-app',
+      projectTypes: ['web-app'],
       complexity: 'complex',
       uniqueScreens: 30,
       apiIntegrations: 12,
@@ -163,7 +163,7 @@ export const INDUSTRY_TEMPLATES: IndustryTemplate[] = [
     description: 'Customer relationship management with sales pipeline and reporting',
     category: 'saas',
     defaults: {
-      projectType: 'web-app',
+      projectTypes: ['web-app'],
       complexity: 'medium',
       uniqueScreens: 15,
       apiIntegrations: 5,
@@ -185,7 +185,7 @@ export const INDUSTRY_TEMPLATES: IndustryTemplate[] = [
     description: 'Kanban boards, task tracking, and team collaboration',
     category: 'saas',
     defaults: {
-      projectType: 'web-app',
+      projectTypes: ['web-app'],
       complexity: 'medium',
       uniqueScreens: 12,
       apiIntegrations: 4,
@@ -209,7 +209,7 @@ export const INDUSTRY_TEMPLATES: IndustryTemplate[] = [
     description: 'Platform connecting service providers with customers',
     category: 'marketplace',
     defaults: {
-      projectType: 'web-app',
+      projectTypes: ['web-app'],
       complexity: 'complex',
       uniqueScreens: 20,
       apiIntegrations: 7,
@@ -233,7 +233,7 @@ export const INDUSTRY_TEMPLATES: IndustryTemplate[] = [
     description: 'Online courses with video content, quizzes, and progress tracking',
     category: 'education',
     defaults: {
-      projectType: 'web-app',
+      projectTypes: ['web-app'],
       complexity: 'medium',
       uniqueScreens: 16,
       apiIntegrations: 5,

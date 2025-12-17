@@ -576,7 +576,7 @@ export function EstimatorForm() {
 
           {/* Historical Match Panel */}
           <HistoricalMatchPanel
-            projectType={formData.projectType}
+            projectType={formData.projectTypes?.[0] || 'web-app'}
             platform={formData.platforms[0] || 'web'}
             complexity={formData.complexity}
             currentHours={liveEstimate.totalHours}

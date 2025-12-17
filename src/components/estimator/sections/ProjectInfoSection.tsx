@@ -1,6 +1,7 @@
-import { FileText, Briefcase, Gauge, Upload, Clock, DollarSign, Calendar, Sparkles } from 'lucide-react';
+import { FileText, Briefcase, Gauge, Clock, DollarSign, Calendar, Sparkles, Check } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
+import { Badge } from '@/components/ui/badge';
 import { VoiceInput } from '../VoiceInput';
 import { AIAnalysisPanel } from '../AIAnalysisPanel';
 import { FileUpload } from '../FileUpload';
@@ -52,6 +53,20 @@ export function ProjectInfoSection({ data, onChange }: ProjectInfoSectionProps) 
       complexity: analysis.suggestedComplexity,
     });
   };
+
+  // Toggle project type selection (multi-select with deselect)
+  const toggleProjectType = (type: ProjectType) => {
+    const current = data.projectTypes || [];
+    if (current.includes(type)) {
+      // Deselect
+      onChange({ projectTypes: current.filter(t => t !== type) });
+    } else {
+      // Select (add to array)
+      onChange({ projectTypes: [...current, type] });
+    }
+  };
+
+  const selectedCount = data.projectTypes?.length || 0;
 
   return (
     <section className="space-y-6">
@@ -115,7 +130,7 @@ export function ProjectInfoSection({ data, onChange }: ProjectInfoSectionProps) 
           
           <FileUpload
             documents={data.uploadedDocuments || []}
-            projectType={data.projectType}
+            projectType={data.projectTypes?.[0] || 'web-app'}
             onDocumentsChange={(docs) => onChange({ uploadedDocuments: docs })}
             onAnalysisComplete={handleAnalysisComplete}
           />
@@ -202,34 +217,52 @@ export function ProjectInfoSection({ data, onChange }: ProjectInfoSectionProps) 
           {/* AI Analysis Panel */}
           <AIAnalysisPanel 
             description={data.voiceDescription || ''} 
-            projectType={data.projectType}
+            projectType={data.projectTypes?.[0] || 'web-app'}
             onApplySuggestions={handleAISuggestions}
           />
         </>
       )}
 
-      {/* Project Type */}
+      {/* Project Type - Multi-Select */}
       <div>
-        <label className="text-sm font-medium mb-3 block flex items-center gap-2">
-          <Briefcase className="w-4 h-4" /> Project Type
+        <label className="text-sm font-medium mb-3 block flex items-center justify-between">
+          <span className="flex items-center gap-2">
+            <Briefcase className="w-4 h-4" /> Project Type
+          </span>
+          {selectedCount > 0 && (
+            <Badge variant="secondary" className="text-xs">
+              {selectedCount} selected
+            </Badge>
+          )}
         </label>
+        <p className="text-xs text-muted-foreground mb-3">
+          Select one or more project types. Click again to deselect.
+        </p>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-          {PROJECT_TYPES.map(({ value, label, description }) => (
-            <button
-              key={value}
-              type="button"
-              onClick={() => onChange({ projectType: value })}
-              className={cn(
-                "p-4 rounded-xl border-2 text-center transition-all hover:shadow-md",
-                data.projectType === value
-                  ? "border-primary bg-primary/5"
-                  : "border-border hover:border-primary/50"
-              )}
-            >
-              <p className="font-medium text-sm">{label}</p>
-              <p className="text-xs text-muted-foreground mt-1">{description}</p>
-            </button>
-          ))}
+          {PROJECT_TYPES.map(({ value, label, description }) => {
+            const isSelected = data.projectTypes?.includes(value);
+            return (
+              <button
+                key={value}
+                type="button"
+                onClick={() => toggleProjectType(value)}
+                className={cn(
+                  "p-4 rounded-xl border-2 text-center transition-all hover:shadow-md relative",
+                  isSelected
+                    ? "border-primary bg-primary/5"
+                    : "border-border hover:border-primary/50"
+                )}
+              >
+                {isSelected && (
+                  <div className="absolute top-2 right-2 w-5 h-5 rounded-full bg-primary flex items-center justify-center">
+                    <Check className="w-3 h-3 text-primary-foreground" />
+                  </div>
+                )}
+                <p className="font-medium text-sm">{label}</p>
+                <p className="text-xs text-muted-foreground mt-1">{description}</p>
+              </button>
+            );
+          })}
         </div>
       </div>
 
