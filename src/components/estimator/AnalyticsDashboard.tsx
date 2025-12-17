@@ -1,12 +1,14 @@
 import { useState, useEffect, useMemo } from 'react';
-import { BarChart3, TrendingUp, TrendingDown, Clock, DollarSign, Calendar, RefreshCw, Filter } from 'lucide-react';
+import { BarChart3, TrendingUp, TrendingDown, Clock, DollarSign, Calendar, RefreshCw, Filter, Users } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line, PieChart, Pie, Cell, Legend } from 'recharts';
 import { useEstimateStorage } from '@/hooks/useEstimateStorage';
-import { formatCurrency, formatDuration } from '@/lib/estimationEngine';
+import { formatCurrency, formatDuration, getTeamSalaryBreakdown, getTeamHeadcount } from '@/lib/estimationEngine';
+import { defaultTeamComposition, TeamComposition } from '@/types/estimator';
+
 
 interface EstimateRecord {
   id: string;
@@ -19,9 +21,15 @@ interface EstimateRecord {
   total_cost: number;
   created_at: string;
   stage_estimates: any;
+  form_data?: any;
 }
 
-export function AnalyticsDashboard() {
+interface AnalyticsDashboardProps {
+  teamComposition?: TeamComposition;
+  totalHours?: number;
+}
+
+export function AnalyticsDashboard({ teamComposition, totalHours = 0 }: AnalyticsDashboardProps) {
   const [estimates, setEstimates] = useState<EstimateRecord[]>([]);
   const [loading, setLoading] = useState(true);
   const [timeFilter, setTimeFilter] = useState<'week' | 'month' | 'quarter' | 'all'>('all');
@@ -318,6 +326,40 @@ export function AnalyticsDashboard() {
               </ResponsiveContainer>
             </CardContent>
           </Card>
+
+          {/* Team Salary Breakdown */}
+          {teamComposition && getTeamHeadcount(teamComposition) > 0 && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-base flex items-center gap-2">
+                  <Users className="w-4 h-4" />
+                  Team Salaries Breakdown
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <ResponsiveContainer width="100%" height={250}>
+                  <PieChart>
+                    <Pie
+                      data={getTeamSalaryBreakdown(teamComposition, totalHours || 1000)}
+                      cx="50%"
+                      cy="50%"
+                      labelLine={false}
+                      label={({ name, cost }) => `${name}: ${formatCurrency(cost)}`}
+                      outerRadius={80}
+                      fill="#8884d8"
+                      dataKey="cost"
+                    >
+                      {getTeamSalaryBreakdown(teamComposition, totalHours || 1000).map((_, index) => (
+                        <Cell key={`cell-salary-${index}`} fill={COLORS[index % COLORS.length]} />
+                      ))}
+                    </Pie>
+                    <Tooltip formatter={(value: number) => formatCurrency(value)} />
+                    <Legend />
+                  </PieChart>
+                </ResponsiveContainer>
+              </CardContent>
+            </Card>
+          )}
         </div>
       )}
 
