@@ -5,6 +5,50 @@ export type Platform = 'web' | 'android' | 'ios' | 'linux-server' | 'cross-platf
 export type ItemComplexity = 'low' | 'medium' | 'high';
 export type ExperienceLevel = 'junior' | 'mid' | 'senior' | 'lead' | 'architect';
 
+// Team role configuration for the Team Builder
+export interface TeamRoleConfig {
+  count: number;
+  hourlyRate: number;
+  customExperience?: string; // e.g., "5 years React"
+}
+
+// Complete team composition with all roles
+export interface TeamComposition {
+  junior: TeamRoleConfig;
+  mid: TeamRoleConfig;
+  senior: TeamRoleConfig;
+  lead: TeamRoleConfig;
+  architect: TeamRoleConfig;
+  customRoles: CustomRole[];
+}
+
+// Custom role that user can add
+export interface CustomRole {
+  id: string;
+  name: string;
+  count: number;
+  hourlyRate: number;
+}
+
+// Default hourly rates by experience level
+export const DEFAULT_HOURLY_RATES: Record<ExperienceLevel, number> = {
+  junior: 30,
+  mid: 60,
+  senior: 100,
+  lead: 150,
+  architect: 250,
+};
+
+// Default team composition
+export const defaultTeamComposition: TeamComposition = {
+  junior: { count: 0, hourlyRate: DEFAULT_HOURLY_RATES.junior },
+  mid: { count: 0, hourlyRate: DEFAULT_HOURLY_RATES.mid },
+  senior: { count: 0, hourlyRate: DEFAULT_HOURLY_RATES.senior },
+  lead: { count: 0, hourlyRate: DEFAULT_HOURLY_RATES.lead },
+  architect: { count: 0, hourlyRate: DEFAULT_HOURLY_RATES.architect },
+  customRoles: [],
+};
+
 export interface CustomItem {
   id: string;
   name: string;
@@ -61,6 +105,7 @@ export interface ProjectEstimate {
   id: string;
   projectName: string;
   projectType: ProjectType;
+  projectTypes?: ProjectType[]; // Multi-select support
   platform: Platform | Platform[];
   complexity: ComplexityLevel;
   stages: StageEstimate[];
@@ -76,18 +121,22 @@ export interface ProjectEstimate {
     adjustedHours: number;
   };
   teamExperience?: ExperienceLevel;
+  teamComposition?: TeamComposition;
   technologies?: string[];
   resourceAllocation?: ResourceAllocation;
 }
 
 export interface ProjectFormData {
   projectName: string;
-  projectType: ProjectType;
+  projectTypes: ProjectType[]; // Changed to array for multi-select
   projectStage: ProjectStage;
-  platforms: Platform[];  // Changed to array for multi-platform
+  platforms: Platform[];  // Array for multi-platform
   complexity: ComplexityLevel;
   
-  // Team Experience
+  // Team Composition (replaces single teamExperience)
+  teamComposition: TeamComposition;
+  
+  // Legacy - kept for compatibility but derived from teamComposition
   teamExperience: ExperienceLevel;
   yearsOfExperience: number;
   
@@ -181,11 +230,12 @@ export const EXPERIENCE_LEVELS: { value: ExperienceLevel; label: string; years: 
 // Blank initial state - NO pre-selected options
 export const defaultFormData: ProjectFormData = {
   projectName: '',
-  projectType: '' as ProjectType, // Blank - user must select
+  projectTypes: [], // Empty array - user must select
   projectStage: '' as ProjectStage, // Blank - user must select
   platforms: [], // Empty - user must select
   complexity: '' as ComplexityLevel, // Blank - user must select
-  teamExperience: '' as ExperienceLevel, // Blank - user must select
+  teamComposition: { ...defaultTeamComposition }, // Empty team
+  teamExperience: '' as ExperienceLevel, // Derived from team composition
   yearsOfExperience: 0,
   technologies: [],
   pmInvolvement: 0,
@@ -209,11 +259,94 @@ export const defaultFormData: ProjectFormData = {
 // Check if minimum required fields are selected
 export const hasMinimumSelections = (formData: ProjectFormData): boolean => {
   return !!(
-    formData.projectType &&
+    formData.projectTypes.length > 0 && // At least one project type
     formData.projectStage &&
     formData.platforms.length > 0 &&
     formData.complexity
   );
+};
+
+// Get total team count from composition
+export const getTotalTeamCount = (teamComposition: TeamComposition): number => {
+  const baseCount = 
+    teamComposition.junior.count +
+    teamComposition.mid.count +
+    teamComposition.senior.count +
+    teamComposition.lead.count +
+    teamComposition.architect.count;
+  const customCount = teamComposition.customRoles.reduce((sum, role) => sum + role.count, 0);
+  return baseCount + customCount;
+};
+
+// Calculate weighted average experience level from team composition
+export const getAverageExperienceLevel = (teamComposition: TeamComposition): ExperienceLevel => {
+  const weights: Record<ExperienceLevel, number> = {
+    junior: 1,
+    mid: 2,
+    senior: 3,
+    lead: 4,
+    architect: 5,
+  };
+  
+  const total = getTotalTeamCount(teamComposition);
+  if (total === 0) return 'mid';
+  
+  const weightedSum = 
+    teamComposition.junior.count * weights.junior +
+    teamComposition.mid.count * weights.mid +
+    teamComposition.senior.count * weights.senior +
+    teamComposition.lead.count * weights.lead +
+    teamComposition.architect.count * weights.architect;
+  
+  const avgWeight = weightedSum / total;
+  
+  if (avgWeight <= 1.5) return 'junior';
+  if (avgWeight <= 2.5) return 'mid';
+  if (avgWeight <= 3.5) return 'senior';
+  if (avgWeight <= 4.5) return 'lead';
+  return 'architect';
+};
+
+// Calculate productivity multiplier from team composition
+export const getProductivityMultiplier = (teamComposition: TeamComposition): number => {
+  const total = getTotalTeamCount(teamComposition);
+  if (total === 0) return 1.0;
+  
+  const multipliers: Record<ExperienceLevel, number> = {
+    junior: 1.4,
+    mid: 1.1,
+    senior: 1.0,
+    lead: 0.9,
+    architect: 0.85,
+  };
+  
+  const weightedMultiplier = 
+    (teamComposition.junior.count * multipliers.junior +
+    teamComposition.mid.count * multipliers.mid +
+    teamComposition.senior.count * multipliers.senior +
+    teamComposition.lead.count * multipliers.lead +
+    teamComposition.architect.count * multipliers.architect) / total;
+  
+  return Math.round(weightedMultiplier * 100) / 100;
+};
+
+// Calculate monthly team cost
+export const getMonthlyTeamCost = (teamComposition: TeamComposition): number => {
+  const HOURS_PER_MONTH = 160;
+  
+  const baseCost = 
+    teamComposition.junior.count * teamComposition.junior.hourlyRate * HOURS_PER_MONTH +
+    teamComposition.mid.count * teamComposition.mid.hourlyRate * HOURS_PER_MONTH +
+    teamComposition.senior.count * teamComposition.senior.hourlyRate * HOURS_PER_MONTH +
+    teamComposition.lead.count * teamComposition.lead.hourlyRate * HOURS_PER_MONTH +
+    teamComposition.architect.count * teamComposition.architect.hourlyRate * HOURS_PER_MONTH;
+  
+  const customCost = teamComposition.customRoles.reduce(
+    (sum, role) => sum + role.count * role.hourlyRate * HOURS_PER_MONTH, 
+    0
+  );
+  
+  return baseCost + customCost;
 };
 
 export const HOURLY_RATES = {
