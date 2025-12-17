@@ -1,24 +1,25 @@
 import { useState, useMemo } from 'react';
-import { GitCompare, Plus, Trash2, Copy, Settings2 } from 'lucide-react';
+import { GitCompare, Plus, Trash2, Copy, Settings2, Users, Zap } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Slider } from '@/components/ui/slider';
-import { Switch } from '@/components/ui/switch';
-import { ProjectFormData, ComplexityLevel, ExperienceLevel, Platform, EXPERIENCE_LEVELS } from '@/types/estimator';
-import { calculateEstimate, formatCurrency, formatDuration } from '@/lib/estimationEngine';
+import { Separator } from '@/components/ui/separator';
+import { ProjectFormData, ComplexityLevel, ExperienceLevel, Platform, EXPERIENCE_LEVELS, TeamComposition, defaultTeamComposition } from '@/types/estimator';
+import { calculateEstimate, formatCurrency, formatDuration, getTeamHeadcount, getMonthlyTeamCost } from '@/lib/estimationEngine';
 
 interface Scenario {
   id: string;
   name: string;
   config: Partial<ProjectFormData>;
+  teamOverride?: Partial<TeamComposition>;
   estimate: {
     totalHours: number;
     totalWeeks: number;
     totalCost: number;
+    teamSize?: number;
+    monthlyCost?: number;
   };
 }
 
@@ -30,10 +31,72 @@ const COMPLEXITY_OPTIONS: ComplexityLevel[] = ['simple', 'medium', 'complex'];
 const EXPERIENCE_OPTIONS: ExperienceLevel[] = ['junior', 'mid', 'senior', 'lead', 'architect'];
 const PLATFORM_OPTIONS: Platform[] = ['web', 'android', 'ios', 'linux-server', 'cross-platform'];
 
+// Team configuration presets
+const TEAM_PRESETS = {
+  'all-senior': {
+    name: 'All Senior Team',
+    description: '3 seniors, faster delivery, higher cost',
+    icon: '🏆',
+    composition: {
+      ...defaultTeamComposition,
+      junior: { count: 0, hourlyRate: 30 },
+      mid: { count: 0, hourlyRate: 60 },
+      senior: { count: 3, hourlyRate: 100 },
+      lead: { count: 0, hourlyRate: 150 },
+      architect: { count: 0, hourlyRate: 250 },
+    },
+    experienceOverride: 'senior' as ExperienceLevel,
+  },
+  'budget': {
+    name: 'Budget Team',
+    description: '5 juniors + 1 lead, cost-effective',
+    icon: '💰',
+    composition: {
+      ...defaultTeamComposition,
+      junior: { count: 5, hourlyRate: 30 },
+      mid: { count: 0, hourlyRate: 60 },
+      senior: { count: 0, hourlyRate: 100 },
+      lead: { count: 1, hourlyRate: 150 },
+      architect: { count: 0, hourlyRate: 250 },
+    },
+    experienceOverride: 'junior' as ExperienceLevel,
+  },
+  'balanced': {
+    name: 'Balanced Team',
+    description: '2 juniors, 2 mid, 1 senior',
+    icon: '⚖️',
+    composition: {
+      ...defaultTeamComposition,
+      junior: { count: 2, hourlyRate: 30 },
+      mid: { count: 2, hourlyRate: 60 },
+      senior: { count: 1, hourlyRate: 100 },
+      lead: { count: 0, hourlyRate: 150 },
+      architect: { count: 0, hourlyRate: 250 },
+    },
+    experienceOverride: 'mid' as ExperienceLevel,
+  },
+  'enterprise': {
+    name: 'Enterprise Team',
+    description: '1 architect, 2 leads, 2 seniors',
+    icon: '🏢',
+    composition: {
+      ...defaultTeamComposition,
+      junior: { count: 0, hourlyRate: 30 },
+      mid: { count: 0, hourlyRate: 60 },
+      senior: { count: 2, hourlyRate: 100 },
+      lead: { count: 2, hourlyRate: 150 },
+      architect: { count: 1, hourlyRate: 250 },
+    },
+    experienceOverride: 'architect' as ExperienceLevel,
+  },
+};
+
 export function ScenarioAnalysis({ baseFormData }: ScenarioAnalysisProps) {
   const [scenarios, setScenarios] = useState<Scenario[]>([]);
   const [newScenarioName, setNewScenarioName] = useState('');
 
+  const baseTeamComposition = baseFormData.teamComposition || defaultTeamComposition;
+  
   const baseEstimate = useMemo(() => {
     const est = calculateEstimate(baseFormData);
     const expMultiplier = EXPERIENCE_LEVELS.find(e => e.value === baseFormData.teamExperience)?.multiplier || 1;
@@ -42,8 +105,29 @@ export function ScenarioAnalysis({ baseFormData }: ScenarioAnalysisProps) {
       totalHours: Math.round(est.totalHours * expMultiplier * platformMultiplier),
       totalWeeks: Math.round(est.totalWeeks * expMultiplier * platformMultiplier * 10) / 10,
       totalCost: Math.round(est.totalCost * expMultiplier * platformMultiplier),
+      teamSize: getTeamHeadcount(baseTeamComposition),
+      monthlyCost: getMonthlyTeamCost(baseTeamComposition),
     };
-  }, [baseFormData]);
+  }, [baseFormData, baseTeamComposition]);
+
+  const calculateScenarioEstimate = (config: Partial<ProjectFormData>, teamOverride?: Partial<TeamComposition>) => {
+    const mergedConfig = { ...baseFormData, ...config };
+    const mergedTeam = teamOverride 
+      ? { ...baseTeamComposition, ...teamOverride }
+      : baseTeamComposition;
+    
+    const est = calculateEstimate(mergedConfig as ProjectFormData);
+    const expMultiplier = EXPERIENCE_LEVELS.find(e => e.value === mergedConfig.teamExperience)?.multiplier || 1;
+    const platformMultiplier = 1 + ((mergedConfig.platforms?.length || 1) - 1) * 0.2;
+    
+    return {
+      totalHours: Math.round(est.totalHours * expMultiplier * platformMultiplier),
+      totalWeeks: Math.round(est.totalWeeks * expMultiplier * platformMultiplier * 10) / 10,
+      totalCost: Math.round(est.totalCost * expMultiplier * platformMultiplier),
+      teamSize: getTeamHeadcount(mergedTeam),
+      monthlyCost: getMonthlyTeamCost(mergedTeam),
+    };
+  };
 
   const addScenario = () => {
     const name = newScenarioName.trim() || `Scenario ${scenarios.length + 1}`;
@@ -55,6 +139,21 @@ export function ScenarioAnalysis({ baseFormData }: ScenarioAnalysisProps) {
     };
     setScenarios(prev => [...prev, newScenario]);
     setNewScenarioName('');
+  };
+
+  const addPresetScenario = (presetKey: keyof typeof TEAM_PRESETS) => {
+    const preset = TEAM_PRESETS[presetKey];
+    const config = { ...baseFormData, teamExperience: preset.experienceOverride };
+    const estimate = calculateScenarioEstimate(config, preset.composition);
+    
+    const newScenario: Scenario = {
+      id: `scenario-${Date.now()}`,
+      name: preset.name,
+      config,
+      teamOverride: preset.composition,
+      estimate,
+    };
+    setScenarios(prev => [...prev, newScenario]);
   };
 
   const duplicateScenario = (scenario: Scenario) => {
@@ -75,19 +174,9 @@ export function ScenarioAnalysis({ baseFormData }: ScenarioAnalysisProps) {
       if (s.id !== id) return s;
       
       const newConfig = { ...baseFormData, ...s.config, ...updates };
-      const est = calculateEstimate(newConfig as ProjectFormData);
-      const expMultiplier = EXPERIENCE_LEVELS.find(e => e.value === newConfig.teamExperience)?.multiplier || 1;
-      const platformMultiplier = 1 + ((newConfig.platforms?.length || 1) - 1) * 0.2;
+      const estimate = calculateScenarioEstimate(newConfig, s.teamOverride);
       
-      return {
-        ...s,
-        config: newConfig,
-        estimate: {
-          totalHours: Math.round(est.totalHours * expMultiplier * platformMultiplier),
-          totalWeeks: Math.round(est.totalWeeks * expMultiplier * platformMultiplier * 10) / 10,
-          totalCost: Math.round(est.totalCost * expMultiplier * platformMultiplier),
-        },
-      };
+      return { ...s, config: newConfig, estimate };
     }));
   };
 
@@ -99,6 +188,7 @@ export function ScenarioAnalysis({ baseFormData }: ScenarioAnalysisProps) {
   };
 
   const getDiffBadge = (base: number, compare: number) => {
+    if (base === 0) return null;
     const diff = ((compare - base) / base) * 100;
     if (Math.abs(diff) < 1) return null;
     return (
@@ -287,7 +377,7 @@ export function ScenarioAnalysis({ baseFormData }: ScenarioAnalysisProps) {
                 ))}
               </tr>
 
-              {/* Cost */}
+              {/* Total Cost */}
               <tr className="border-b">
                 <td className="p-3 text-sm font-medium">Total Cost</td>
                 <td className="p-3 text-center bg-primary/5 font-bold text-primary">{formatCurrency(baseEstimate.totalCost)}</td>
@@ -298,6 +388,43 @@ export function ScenarioAnalysis({ baseFormData }: ScenarioAnalysisProps) {
                         {formatCurrency(s.estimate.totalCost)}
                       </span>
                       {getDiffBadge(baseEstimate.totalCost, s.estimate.totalCost)}
+                    </div>
+                  </td>
+                ))}
+              </tr>
+
+              {/* Team Size */}
+              <tr className="border-b">
+                <td className="p-3 text-sm font-medium">
+                  <div className="flex items-center gap-2">
+                    <Users className="w-4 h-4" />
+                    Team Size
+                  </div>
+                </td>
+                <td className="p-3 text-center bg-primary/5 font-bold">{baseEstimate.teamSize} people</td>
+                {scenarios.map(s => (
+                  <td key={s.id} className="p-3 text-center">
+                    <div className="flex items-center justify-center gap-2">
+                      <span className={`font-bold ${getDiffColor(baseEstimate.teamSize || 1, s.estimate.teamSize || 1)}`}>
+                        {s.estimate.teamSize} people
+                      </span>
+                      {getDiffBadge(baseEstimate.teamSize || 1, s.estimate.teamSize || 1)}
+                    </div>
+                  </td>
+                ))}
+              </tr>
+
+              {/* Monthly Team Cost */}
+              <tr className="border-b">
+                <td className="p-3 text-sm font-medium">Monthly Cost</td>
+                <td className="p-3 text-center bg-primary/5 font-bold">{formatCurrency(baseEstimate.monthlyCost || 0)}/mo</td>
+                {scenarios.map(s => (
+                  <td key={s.id} className="p-3 text-center">
+                    <div className="flex items-center justify-center gap-2">
+                      <span className={`font-bold ${getDiffColor(baseEstimate.monthlyCost || 1, s.estimate.monthlyCost || 1)}`}>
+                        {formatCurrency(s.estimate.monthlyCost || 0)}/mo
+                      </span>
+                      {getDiffBadge(baseEstimate.monthlyCost || 1, s.estimate.monthlyCost || 1)}
                     </div>
                   </td>
                 ))}
@@ -314,45 +441,59 @@ export function ScenarioAnalysis({ baseFormData }: ScenarioAnalysisProps) {
           </div>
         )}
 
-        {/* Quick Scenarios */}
-        {scenarios.length === 0 && (
-          <div className="flex flex-wrap gap-2">
-            <span className="text-sm text-muted-foreground mr-2">Quick add:</span>
-            <Button variant="outline" size="sm" onClick={() => {
-              setScenarios([{
-                id: 'reduced-scope',
-                name: 'Reduced Scope',
-                config: { ...baseFormData, uniqueScreens: Math.ceil(baseFormData.uniqueScreens * 0.7), complexity: 'simple' as ComplexityLevel },
-                estimate: baseEstimate,
-              }]);
-              setTimeout(() => updateScenarioConfig('reduced-scope', {}), 0);
-            }}>
-              Reduced Scope
-            </Button>
-            <Button variant="outline" size="sm" onClick={() => {
-              setScenarios([{
-                id: 'senior-team',
-                name: 'Senior Team',
-                config: { ...baseFormData, teamExperience: 'senior' as ExperienceLevel },
-                estimate: baseEstimate,
-              }]);
-              setTimeout(() => updateScenarioConfig('senior-team', {}), 0);
-            }}>
-              Senior Team
-            </Button>
-            <Button variant="outline" size="sm" onClick={() => {
-              setScenarios([{
-                id: 'mvp',
-                name: 'MVP Version',
-                config: { ...baseFormData, uniqueScreens: 5, apiIntegrations: 2, complexity: 'simple' as ComplexityLevel },
-                estimate: baseEstimate,
-              }]);
-              setTimeout(() => updateScenarioConfig('mvp', {}), 0);
-            }}>
-              MVP Version
-            </Button>
+        {/* Team Configuration Presets */}
+        <div className="space-y-3">
+          <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
+            <Zap className="w-4 h-4" />
+            Quick Team Presets
           </div>
-        )}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+            {Object.entries(TEAM_PRESETS).map(([key, preset]) => (
+              <Button
+                key={key}
+                variant="outline"
+                size="sm"
+                className="flex flex-col items-start h-auto p-3 text-left"
+                onClick={() => addPresetScenario(key as keyof typeof TEAM_PRESETS)}
+              >
+                <div className="flex items-center gap-2 font-medium">
+                  <span>{preset.icon}</span>
+                  <span>{preset.name}</span>
+                </div>
+                <span className="text-xs text-muted-foreground mt-1">{preset.description}</span>
+              </Button>
+            ))}
+          </div>
+        </div>
+
+        <Separator />
+
+        {/* Custom Scenarios */}
+        <div className="flex flex-wrap gap-2">
+          <span className="text-sm text-muted-foreground mr-2">Quick config presets:</span>
+          <Button variant="outline" size="sm" onClick={() => {
+            const config = { ...baseFormData, uniqueScreens: Math.ceil(baseFormData.uniqueScreens * 0.7), complexity: 'simple' as ComplexityLevel };
+            setScenarios(prev => [...prev, {
+              id: `scenario-${Date.now()}`,
+              name: 'Reduced Scope',
+              config,
+              estimate: calculateScenarioEstimate(config),
+            }]);
+          }}>
+            Reduced Scope
+          </Button>
+          <Button variant="outline" size="sm" onClick={() => {
+            const config = { ...baseFormData, uniqueScreens: 5, apiIntegrations: 2, complexity: 'simple' as ComplexityLevel };
+            setScenarios(prev => [...prev, {
+              id: `scenario-${Date.now()}`,
+              name: 'MVP Version',
+              config,
+              estimate: calculateScenarioEstimate(config),
+            }]);
+          }}>
+            MVP Version
+          </Button>
+        </div>
       </CardContent>
     </Card>
   );

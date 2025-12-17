@@ -71,7 +71,7 @@ export function ResourceAllocationPlanner({
     return stage?.hours || 0;
   };
 
-  // Calculate FTE staffing based on desired duration
+  // Calculate FTE staffing based on desired duration - DYNAMIC calculation
   const staffing = useMemo(() => {
     // Guard against invalid inputs
     if (!totalHours || totalHours <= 0 || !stages || stages.length === 0) {
@@ -95,20 +95,34 @@ export function ResourceAllocationPlanner({
       return { frontend: 0, backend: 0, qa: 0, pm: 0, devops: 0, total: 0 };
     }
     
-    // Calculate proportional FTE for each role
-    const frontend = safeNumber(Math.max(1, Math.ceil((frontendHours + designHours) / totalStageHours * totalFteNeeded)), 0);
-    const backend = safeNumber(Math.max(1, Math.ceil(backendHours / totalStageHours * totalFteNeeded)), 0);
-    const qa = safeNumber(Math.max(1, Math.ceil(qaHours / totalStageHours * totalFteNeeded)), 0);
-    const pm = safeNumber(Math.max(1, Math.ceil(pmHours / totalStageHours * totalFteNeeded)), 0);
-    const devops = safeNumber(Math.max(1, Math.ceil(devopsHours / totalStageHours * totalFteNeeded)), 0);
+    // Calculate proportional FTE for each role - NO forced minimum
+    // Only include roles that have actual hours allocated
+    const frontendFte = frontendHours + designHours > 0 
+      ? safeNumber(Math.ceil((frontendHours + designHours) / totalStageHours * totalFteNeeded), 0) 
+      : 0;
+    const backendFte = backendHours > 0 
+      ? safeNumber(Math.ceil(backendHours / totalStageHours * totalFteNeeded), 0) 
+      : 0;
+    const qaFte = qaHours > 0 
+      ? safeNumber(Math.ceil(qaHours / totalStageHours * totalFteNeeded), 0) 
+      : 0;
+    const pmFte = pmHours > 0 
+      ? safeNumber(Math.ceil(pmHours / totalStageHours * totalFteNeeded), 0) 
+      : 0;
+    const devopsFte = devopsHours > 0 
+      ? safeNumber(Math.ceil(devopsHours / totalStageHours * totalFteNeeded), 0) 
+      : 0;
 
+    // Ensure at least 1 total FTE if there are hours
+    const total = frontendFte + backendFte + qaFte + pmFte + devopsFte;
+    
     return {
-      frontend,
-      backend,
-      qa,
-      pm,
-      devops,
-      total: frontend + backend + qa + pm + devops,
+      frontend: frontendFte,
+      backend: backendFte,
+      qa: qaFte,
+      pm: pmFte,
+      devops: devopsFte,
+      total: total > 0 ? total : (totalFteNeeded > 0 ? Math.ceil(totalFteNeeded) : 0),
     };
   }, [totalHours, desiredDurationMonths, stages]);
 
